@@ -9,7 +9,8 @@ RUN mvn clean package -DskipTests
 FROM openjdk:17-jdk-slim
 # Puerto que la aplicación usará. Render necesita esto.
 EXPOSE 8080
-# Copiar solo el archivo .jar compilado de la etapa anterior
-COPY --from=build /target/*.jar app.jar
+# ----- LA LÍNEA CORREGIDA ES ESTA -----
+# Copiar el archivo .jar específico, no usar un comodín (*)
+COPY --from=build /target/miportafolio-1.0-SNAPSHOT.jar app.jar
 # El comando para arrancar la aplicación Java
 ENTRYPOINT ["java","-jar","/app.jar"]
