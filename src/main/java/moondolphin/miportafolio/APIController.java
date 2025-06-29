@@ -32,4 +32,13 @@ public class APIController {
         // Busca todos los proyectos en la DB y los devuelve como JSON
         return proyectoRepository.findAll();
     }
+    
+    @GetMapping("/api/proyectos/buscar")
+    public List<Proyecto> buscarPorNombre(@RequestParam String nombre) {
+        return proyectoRepository.findByNombre(nombre);
+    }
+     @GetMapping("/api/proyectos/buscar-termino")
+    public List<Proyecto> buscarPorTerminoEnDescripcion(@RequestParam String descripcion) {
+        return proyectoRepository.buscarPorTerminoEnDescripcion(descripcion); 
+    }
 }

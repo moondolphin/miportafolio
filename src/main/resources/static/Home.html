@@ -42,23 +42,6 @@
             opacity: 0.04;
             z-index: -1;
         }
-
-        /* Animación de "light leak" para el cambio de ambiente */
-        .light-leak {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            animation: time-flow 90s infinite linear;
-            z-index: -2;
-        }
-
-        @keyframes time-flow {
-            0% { background: radial-gradient(circle at 10% 90%, var(--color-light-violet) 0%, transparent 25%); }
-            25% { background: radial-gradient(circle at 90% 90%, var(--color-gold) 0%, transparent 30%); }
-            50% { background: radial-gradient(circle at 90% 10%, var(--color-moss-green) 0%, transparent 25%); }
-            75% { background: radial-gradient(circle at 10% 10%, var(--color-light-violet) 0%, transparent 30%); }
-            100% { background: radial-gradient(circle at 10% 90%, var(--color-light-violet) 0%, transparent 25%); }
-        }
         
         /* Efecto de líneas de escaneo Lo-fi */
         .scanlines {
@@ -90,12 +73,12 @@
         /* Cita de bienvenida con efecto neón */
         .epigraph {
             font-family: var(--font-serif);
-            font-size: 1.5rem; /* Ajustado de 1.75rem */
+            font-size: 1.25rem; /* Ajustado de 1.5rem */
             color: var(--color-text-primary);
             text-shadow: 0 0 8px var(--color-cyber-glow), 0 0 10px var(--color-cyber-pink);
         }
 
-        @media (min-width: 768px) { .epigraph { font-size: 2rem; } } /* Ajustado de 2.25rem */
+        @media (min-width: 768px) { .epigraph { font-size: 1.75rem; } } /* Ajustado de 2rem */
 
         /* --- NAVEGACIÓN --- */
         
@@ -171,7 +154,6 @@
 <body class="min-h-screen flex items-center justify-center p-4">
 
     <!-- Capas de efectos visuales -->
-    <div class="light-leak"></div>
     <div class="noise-overlay"></div>
     <div class="scanlines"></div>
     <div class="fallen-ceiling-oval"></div>
@@ -202,22 +184,21 @@
     <main class="text-center w-full max-w-4xl mx-auto z-10">
         <!-- Navegación principal -->
         <nav class="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16">
-             <div class="nav-item relative group">
-                <a href="#inspiracion">Inspiración</a>
-                <p class="tooltip absolute -bottom-10 left-1/2 -translate-x-1/2 w-max text-sm px-3 py-1 rounded-md">Música y arte.</p>
+            <div class="nav-item relative group">
+                <a href="#escritura">Escritura</a>
+                <p class="tooltip absolute -bottom-10 left-1/2 -translate-x-1/2 w-max text-sm px-3 py-1 rounded-md">Poesía, cuentos y novelas.</p>
             </div>
             <div class="nav-item relative group">
                 <a href="#programacion">Programación</a>
                 <p class="tooltip absolute -bottom-10 left-1/2 -translate-x-1/2 w-max text-sm px-3 py-1 rounded-md">Proyectos y código.</p>
             </div>
             <div class="nav-item relative group">
-                <a href="#fotografia">Fotografía</a>
+                <a href="/MisaLunaFotografía.html"  class="link-nueva-pagina">Fotografía</a>
                 <p class="tooltip absolute -bottom-10 left-1/2 -translate-x-1/2 w-max text-sm px-3 py-1 rounded-md">Blanco y negro.</p>
             </div>
-           
-			<div class="nav-item relative group">
-                <a href="#escritura">Escritura</a>
-                <p class="tooltip absolute -bottom-10 left-1/2 -translate-x-1/2 w-max text-sm px-3 py-1 rounded-md">Poesía, cuentos y novelas.</p>
+            <div class="nav-item relative group">
+                <a href="#inspiracion">Inspiración</a>
+                <p class="tooltip absolute -bottom-10 left-1/2 -translate-x-1/2 w-max text-sm px-3 py-1 rounded-md">Música y arte.</p>
             </div>
         </nav>
 
@@ -227,5 +208,27 @@
         </p>
     </main>
 
+    <script>
+            // Busca TODOS los enlaces que marcamos con nuestra clase especial
+            const enlacesExternos = document.querySelectorAll('.link-nueva-pagina');
+            
+            // Para cada uno de esos enlaces...
+            enlacesExternos.forEach(function(enlace) {
+                
+                // Le añade un 'escuchador' de clics
+                enlace.addEventListener('click', function(event) {
+                    
+                    // 1. Previene CUALQUIER otro comportamiento por defecto o de otros scripts
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
+                    // 2. Obtenemos la URL a la que queremos ir
+                    const url = this.getAttribute('href');
+                    
+                    // 3. Le ordenamos al navegador que abra esa URL en una nueva pestaña
+                    window.open(url, '_blank');
+                });
+            });
+        </script>
 </body>
 </html>
