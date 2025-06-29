@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Misa Luna | Fotografía</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos personalizados para complementar Tailwind */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f0f1b; /* Azul noche muy oscuro */
+            color: #e0e0e0;
+        }
+        /* Contenedor principal para evitar que el canvas afecte el scroll */
+        .content-wrapper {
+            position: relative;
+            z-index: 1;
+        }
+        /* Canvas para el fondo estrellado */
+        #starry-sky-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image:
+                radial-gradient(at 0% 0%, hsla(253, 40%, 15%, 0.4) 0px, transparent 50%),
+                radial-gradient(at 98% 99%, hsla(300, 48%, 23%, 0.4) 0px, transparent 50%);
+        }
+        .font-serif-display {
+            font-family: 'Cormorant Garamond', serif;
+        }
+        
+        /* --- ESTILOS CORREGIDOS PARA LOS BOTONES DE NAVEGACIÓN --- */
+        .nav-link {
+            padding: 0.5rem 1.5rem; /* Equivalente a py-2 px-6 */
+            font-size: 1.125rem; /* text-lg */
+            color: rgb(209, 213, 219); /* text-gray-300 */
+            background-color: rgba(31, 41, 55, 0.4); /* bg-gray-800/40 */
+            border-radius: 0.5rem; /* rounded-lg */
+            margin-left: 0.5rem;
+            margin-right: 0.5rem;
+            transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .nav-link:hover {
+            background-color: rgba(107, 33, 168, 0.6); /* hover:bg-purple-700/60 */
+            color: #ffffff;
+        }
+        .nav-link.active {
+            background-color: rgb(147, 51, 234); /* bg-purple-600 */
+            color: #ffffff;
+            font-weight: 600; /* font-semibold */
+            box-shadow: 0 0 15px rgba(147, 51, 234, 0.4); /* Sombra morada */
+            border-color: rgba(147, 51, 234, 0.8);
+        }
+        /* ----------------------------------------------------------------- */
+
+        /* Estilos para la galería con columnas (Masonry) */
+        .masonry-gallery {
+            column-count: 2;
+            column-gap: 1rem;
+        }
+        @media (min-width: 768px) {
+            .masonry-gallery {
+                column-count: 3;
+            }
+        }
+        @media (min-width: 1024px) {
+            .masonry-gallery {
+                column-count: 4;
+            }
+        }
+        .masonry-item {
+            display: inline-block;
+            width: 100%;
+            margin-bottom: 1rem;
+            break-inside: avoid;
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        .masonry-item:hover {
+            transform: scale(1.03);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        /* Estilos para el Lightbox (Modal) */
+        .lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(16, 16, 26, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 0 40px rgba(224, 184, 252, 0.2);
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    
+    <!-- Canvas para el fondo estrellado animado -->
+    <canvas id="starry-sky-canvas"></canvas>
+
+    <div class="content-wrapper max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- Encabezado y Navegación -->
+        <header class="text-center mb-12">
+            <h1 class="font-serif-display text-5xl md:text-6xl font-bold text-white tracking-wider">Misa Luna</h1>
+            <p class="text-gray-400 mt-2 text-lg">Fotografía del Alma</p>
+        </header>
+
+        <nav class="flex justify-center mb-12">
+            <a id="nav-inicio" class="nav-link active" onclick="showTab('inicio')">Inicio</a>
+            <a id="nav-galeria" class="nav-link" onclick="showTab('galeria')">Galería</a>
+            <a id="nav-informacion" class="nav-link" onclick="showTab('informacion')">Información</a>
+        </nav>
+
+        <!-- Contenido de las Solapas -->
+        <main>
+            <!-- Solapa Inicio -->
+            <section id="tab-inicio">
+                <div class="bg-gray-900/50 p-8 rounded-lg shadow-xl ring-1 ring-white/10 backdrop-blur-sm">
+                    <h2 class="font-serif-display text-4xl mb-6 text-purple-300">Una Mirada al Mundo Interior</h2>
+                    <div class="text-gray-300 space-y-4 leading-relaxed text-lg">
+                        <p>El estilo de Misa Luna es marcadamente íntimo, contemplativo y onírico. Se aleja de la fotografía documental y se adentra en la expresión de una realidad subjetiva y emocional.</p>
+                        <p>Su trabajo se define por una potente <strong class="text-purple-300">dualidad cromática</strong>: un blanco y negro nostálgico que resalta formas y texturas, y una paleta dominante de violetas y púrpuras que transforma lo cotidiano en paisajes de ensueño. No es el mundo como es, sino el mundo como se siente.</p>
+                        <p>En sus imágenes, los momentos de soledad, los detalles de la naturaleza y los cielos del crepúsculo se convierten en un lienzo emocional. Cada fotografía es una ventana no tanto al mundo exterior, sino a un universo interior, poético y melancólico, que invita a ver más allá de lo evidente.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Solapa Galería -->
+            <section id="tab-galeria" class="hidden">
+                 <div id="gallery-container" class="masonry-gallery">
+                    <!-- Las imágenes se cargarán aquí con JavaScript -->
+                 </div>
+            </section>
+
+            <!-- Solapa Información -->
+            <section id="tab-informacion" class="hidden">
+                 <div class="bg-gray-900/50 p-8 rounded-lg shadow-xl ring-1 ring-white/10 backdrop-blur-sm max-w-2xl mx-auto text-center">
+                    <h2 class="font-serif-display text-4xl mb-6 text-purple-300">Información</h2>
+                    <p class="text-gray-300 text-lg">Más detalles próximamente...</p>
+                 </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Lightbox Modal -->
+    <div id="lightbox" class="lightbox hidden" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" alt="Vista ampliada">
+    </div>
+
+    <script>
+        // --- LÓGICA DEL FONDO ESTRELLADO ---
+        const canvas = document.getElementById('starry-sky-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let stars = [];
+        let numStars = 200;
+
+        function setCanvasSize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function createStars() {
+            stars = [];
+            for(let i = 0; i < numStars; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 1.5,
+                    alpha: Math.random() * 0.5 + 0.5, // Opacidad variable
+                    vx: (Math.random() - 0.5) * 0.1, // Movimiento sutil
+                    vy: (Math.random() - 0.5) * 0.1,
+                });
+            }
+        }
+
+        function drawStars() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(star => {
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
+                ctx.fill();
+            });
+        }
+        
+        function updateStars() {
+            stars.forEach(star => {
+                star.x += star.vx;
+                star.y += star.vy;
+
+                if (star.x < 0 || star.x > canvas.width) star.vx = -star.vx;
+                if (star.y < 0 || star.y > canvas.height) star.vy = -star.vy;
+            });
+        }
+
+        function animate() {
+            drawStars();
+            updateStars();
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', () => {
+            setCanvasSize();
+            createStars();
+        });
+
+        // Inicialización del fondo
+        setCanvasSize();
+        createStars();
+        animate();
+
+
+        // --- LÓGICA DE LAS SOLAPAS ---
+        const tabs = ['inicio', 'galeria', 'informacion'];
+        function showTab(tabId) {
+            tabs.forEach(id => {
+                const tabContent = document.getElementById(`tab-${id}`);
+                const navLink = document.getElementById(`nav-${id}`);
+                if (id === tabId) {
+                    tabContent.classList.remove('hidden');
+                    navLink.classList.add('active');
+                } else {
+                    tabContent.classList.add('hidden');
+                    navLink.classList.remove('active');
+                }
+            });
+        }
+        
+        // --- LÓGICA DE LA GALERÍA ---
+        const galleryImages = [
+            // Fotos en Blanco y Negro (Estilo Nostálgico)
+            { url: 'https://64.media.tumblr.com/66c6a6bd1fb627fa7e229946415809c5/tumblr_oe6b5qtkKd1rjdh63o1_1280.jpg', alt: 'flores' },
+            { url: 'https://64.media.tumblr.com/b717f1a1603629b665eb6088502aa1e8/tumblr_ocszftgPTO1rjdh63o1_1280.jpg', alt: 'Pastel' },
+            { url: 'https://64.media.tumblr.com/1d0fbe51a25506ac061e7b77c677794d/tumblr_oca7xgNFaj1rjdh63o1_1280.jpg', alt: 'Pirate Cat' },
+            { url: 'https://64.media.tumblr.com/1fdafea6b5140c7c4b0e18dd5fb51d5d/tumblr_oaqim3MhGC1rjdh63o1_1280.jpg', alt: 'atardecer' },
+            { url: 'https://64.media.tumblr.com/340b81f10d3582eb7d34dde0428cc140/tumblr_o2nclnGum01rjdh63o1_1280.jpg', alt: 'arbol' },
+            { url: 'https://64.media.tumblr.com/624f9981f2c30de0e1fd9fcb764bc344/tumblr_o1blk0uIvy1rjdh63o1_1280.jpg', alt: 'piramide angel' },
+            { url: 'https://64.media.tumblr.com/90b2779daa65149b069c92a599a766b8/tumblr_o0aop5aVWG1rjdh63o1_1280.jpg', alt: 'Manos' },
+            { url: 'https://64.media.tumblr.com/2f55061144f83a9504726a7a05ac09ff/tumblr_nyp5qsO3KW1rjdh63o1_1280.jpg', alt: 'Alice Mask' },
+            { url: 'https://64.media.tumblr.com/6cd1de991092ef14a85ece8ffb644a9d/tumblr_nydslcynY11rjdh63o1_1280.jpg', alt: 'Pastel y los panaderos' },
+            { url: 'https://64.media.tumblr.com/e427b0f2527cab1ee017e4d04b54d728/tumblr_ntx7z2RSqB1rjdh63o1_1280.jpg', alt: 'A lo lejos' },
+
+            // Fotos en Color (Estilo Onírico, Violeta/Púrpura)
+            { url: 'https://64.media.tumblr.com/32acd93124d909bc184909a6fe6633a7/tumblr_nrrcnnhNsl1rjdh63o1_1280.jpg', alt: 'Pastel y Manchita' },
+            { url: 'https://64.media.tumblr.com/4a7ec6001b33129b465e5bba0d7cb8d4/tumblr_nuoip2g5BU1rjdh63o1_1280.jpg', alt: 'Leve' },
+            { url: 'https://64.media.tumblr.com/f7d78172cd02cb770c501b8305fd21a5/tumblr_njb2tfpqzx1rjdh63o1_1280.jpg', alt: 'Febrero da vueltas' },
+            { url: 'https://64.media.tumblr.com/ebc96893acfc1a35af3ee5c459752f88/tumblr_nh5r5jVDdc1rjdh63o1_1280.jpg', alt: 'Angeles' },
+            { url: 'https://64.media.tumblr.com/3a81e49ae8852a9f056136d06c8fbb93/tumblr_o6ibexFsYI1rjdh63o1_1280.jpg', alt: 'Otro atardecer' },
+            { url: 'https://64.media.tumblr.com/5b69c7e808b5b1a74859a32b2af33144/tumblr_n6mjxxpTeW1rjdh63o1_1280.jpg', alt: 'Los guardianes del cementerio' },
+            { url: 'https://64.media.tumblr.com/d05a9403e1e04d54c5042fadcac697b5/tumblr_o3n69olGXH1rjdh63o1_1280.jpg', alt: 'Ave' },
+            { url: 'https://64.media.tumblr.com/d1e27764444ef570eee8e950c7c1ac8a/tumblr_n74gt4MhCw1rjdh63o1_1280.jpg', alt: 'Arthur?' },
+            { url: 'https://64.media.tumblr.com/3f5d68baa71403128e5e9ff0a2f50485/tumblr_o7hfzdC1D01rjdh63o1_1280.jpg', alt: 'Pasado' },
+            { url: 'https://64.media.tumblr.com/d4c20fb622aac447247838e988cb5646/tumblr_n6oi7xKC9V1rjdh63o1_1280.jpg', alt: 'El toque del ángel' },
+        ];
+        
+        const galleryContainer = document.getElementById('gallery-container');
+        galleryImages.forEach(img => {
+            const item = document.createElement('div');
+            item.className = 'masonry-item';
+            
+            const image = document.createElement('img');
+            image.src = img.url;
+            image.alt = img.alt;
+            image.className = 'rounded-lg shadow-lg w-full h-auto object-cover cursor-pointer';
+            image.loading = 'lazy'; // Carga diferida de imágenes
+            image.onclick = () => openLightbox(img.url);
+            
+            item.appendChild(image);
+            galleryContainer.appendChild(item);
+        });
+
+        // --- LÓGICA DEL LIGHTBOX ---
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+
+        function openLightbox(src) {
+            lightboxImg.src = src;
+            lightbox.classList.remove('hidden');
+        }
+
+        function closeLightbox() {
+            lightbox.classList.add('hidden');
+        }
+
+    </script>
+</body>
+</html>
+
