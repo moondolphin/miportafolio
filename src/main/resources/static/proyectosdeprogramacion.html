@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Programación - Mi Portafolio</title>
+
+        <!-- Tailwind -->
+        <script src="https://cdn.tailwindcss.com"></script>
+
+        <!-- Fuente -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500&display=swap" rel="stylesheet">
+
+        <style>
+            body {
+                font-family: 'Fira Code', monospace;
+                background-color: #11071F;
+                color: #d8b4fe;
+                overflow-x: hidden;   /* que no haya scroll lateral */
+                overflow-y: auto;     /* scroll vertical permitido */
+            }
+
+            /* Ruido sutil tipo monitor CRT */
+            body::before {
+                content: "";
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 800 800' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+                opacity: 0.03;
+                pointer-events: none;
+                z-index: -1;
+            }
+
+            /* Glow neón violeta */
+            .neon-text {
+                text-shadow:
+                    0 0 4px #a855f7,
+                    0 0 8px #a855f7,
+                    0 0 15px #d946ef;
+            }
+
+            .neon-border {
+                border-bottom: 1px solid #d8b4fe;
+                box-shadow: 0 5px 15px -5px #a855f7;
+            }
+
+            .tag {
+                display: inline-block;
+                padding: 1px 6px;
+                border-radius: 4px;
+                font-size: 0.7rem;
+                font-weight: 500;
+                text-transform: uppercase;
+                white-space: nowrap;
+            }
+        </style>
+    </head>
+
+    <body class="w-full min-h-screen flex flex-col p-4 md:p-4">
+
+        <!-- HEADER -->
+        <header class="w-full pb-2 mb-4 neon-border max-w-6xl mx-auto">
+            <h1 class="text-2xl md:text-2xl font-bold text-center neon-text tracking-widest">
+                &lt; PROGRAMACIÓN /&gt;
+            </h1>
+            <p class="text-center text-[0.7rem] md:text-sm text-purple-300 mt-2">
+                Yesica Mabel Puerto | 📍 Buenos Aires, Argentina |
+                <a href="https://github.com/moondolphin" target="_blank" class="text-cyan-300 hover:underline">GitHub</a> |
+                <a href="https://ar.linkedin.com/in/yesica-mabel-puerto-968b27170" target="_blank" class="text-cyan-300 hover:underline">LinkedIn</a>
+            </p>
+            <p class="text-center text-[0.7rem] md:text-sm text-cyan-300 mt-2">
+                Analista de Sistemas • Backend Java • APIs REST • Spring Boot 
+            </p>
+        </header>
+
+        <!-- MAIN -->
+        <main class="flex-grow w-full max-w-6xl mx-auto flex flex-col md:flex-row md:gap-8 gap-6">
+
+            <!-- COLUMNA IZQUIERDA -->
+            <section class="w-full md:w-1/2 flex flex-col space-y-6">
+
+                <!-- PROYECTOS -->
+                <div>
+                    <h2 class="text-lg text-cyan-300 mb-3">&gt; Proyectos Desplegados:</h2>
+
+                    <!-- PROYECTO PRINCIPAL (visible por defecto) -->
+                    <div class="flex flex-col gap-1 mb-4">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <a href="https://github.com/moondolphin/Acc-TC-Bench"
+                               target="_blank"
+                               class="text-green-300 hover:underline font-medium truncate">
+                                API de Reservas Turísticas – Spring Boot
+                            </a>
+                            <span class="tag bg-cyan-500/20 text-cyan-300">Backend</span>
+                            <span class="tag bg-purple-500/20 text-purple-300">Bench Team</span>
+                        </div>
+                        <p class="text-[0.7rem] leading-relaxed text-purple-200/90">
+                            API RESTful desarrollada en Java 17 + Spring Boot para gestionar la búsqueda y reserva
+                            de hoteles y vuelos para una agencia de turismo.
+                        </p>
+                        <p class="text-[0.7rem] leading-relaxed text-purple-200/90">
+                            Arquitectura en capas (Controller / Service / Repository), uso de DTOs y MapStruct
+                            para mapeo seguro entre capas, y documentación con Swagger / OpenAPI 3.
+                            Persistencia en base de datos H2 en memoria para desarrollo. Gestión con Maven.
+                        </p>
+                        <p class="text-[0.65rem] text-purple-400/90 italic">
+                            Rol: desarrollo backend en equipo durante bench interno. Foco en endpoints de reservas y consistencia de datos.
+                        </p>
+                    </div>
+
+                    <!-- BOTONES DESPLEGABLES -->
+                    <div class="space-y-2">
+
+                        <!-- Salvo Game -->
+                        <button onclick="toggleProject('salvo')" 
+                                class="w-full flex items-center justify-between bg-purple-900/20 hover:bg-purple-800/30 px-2 py-1 text-left text-cyan-300 text-sm rounded transition">
+                            <span>▶ Salvo Game (ver más)</span>
+                        </button>
+                        <div id="salvo" class="hidden pl-3 border-l border-purple-600/50">
+                            <div class="flex flex-wrap items-center gap-2 mt-2">
+                                <a href="https://github.com/moondolphin/salvo"
+                                   target="_blank"
+                                   class="text-green-300 hover:underline font-medium truncate">
+                                    Salvo Game
+                                </a>
+                                <span class="tag bg-cyan-500/20 text-cyan-300">Aplicativo</span>
+                                <span class="tag bg-purple-500/20 text-purple-300">Bootcamp</span>
+                            </div>
+                            <p class="text-[0.7rem] leading-relaxed text-purple-200/90 mt-1">
+                                Versión online multijugador inspirada en Battleship. Backend en Java / Spring Boot 2.x
+                                con JPA e H2; frontend en HTML5, CSS3, JavaScript, Bootstrap y jQuery.
+                            </p>
+                            <p class="text-[0.65rem] text-purple-400/90 italic">
+                                Stack: Java 11, Spring Web &amp; Data JPA, Maven, IntelliJ IDEA.
+                            </p>
+                        </div>
+
+                        <!-- Misa Luna Fotografía -->
+                        <button onclick="toggleProject('misa')" 
+                                class="w-full flex items-center justify-between bg-purple-900/20 hover:bg-purple-800/30 px-2 py-1 text-left text-cyan-300 text-sm rounded transition">
+                            <span>▶ Misa Luna Fotografía (ver más)</span>
+                        </button>
+                        <div id="misa" class="hidden pl-3 border-l border-purple-600/50">
+                            <div class="flex flex-wrap items-center gap-2 mt-2">
+                                <a href="https://miportafolio-s0le.onrender.com/MisaLunaFotografía.html"
+                                   target="_blank"
+                                   class="text-green-300 hover:underline font-medium truncate">
+                                    Misa Luna Fotografía
+                                </a>
+                                <span class="tag bg-cyan-500/20 text-cyan-300">Galería</span>
+                                <span class="tag bg-purple-500/20 text-purple-300">Personal</span>
+                            </div>
+                            <p class="text-[0.7rem] leading-relaxed text-purple-200/90 mt-1">
+                                Galería visual desplegada online. HTML / CSS / JavaScript con backend en Spring Boot.
+                                Enfoque en identidad visual propia y presentación de material personal.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SCRIPT PARA ABRIR/CERRAR -->
+                <script>
+                    function toggleProject(id) {
+                        const section = document.getElementById(id);
+                        section.classList.toggle('hidden');
+                    }
+                </script>
+
+
+                <!-- HABILIDADES -->
+                <div>
+                    <h2 class="text-lg text-cyan-300 mb-3">&gt; Habilidades Técnicas:</h2>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm leading-relaxed">
+
+                        <div>
+                            <p class="text-purple-300 font-semibold">Lenguajes:</p>
+                            <ul class="list-disc list-inside text-[0.8rem] space-y-1">
+                                <li>Java 8 / 17</li>
+                                <li>SQL</li>
+                                <li>Java EE (JSF, ICEfaces)</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <p class="text-purple-300 font-semibold">Frameworks:</p>
+                            <ul class="list-disc list-inside text-[0.8rem] space-y-1">
+                                <li>Spring Boot</li>
+                                <li>Hibernate / JPA</li>
+                                <li>Maven</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <p class="text-purple-300 font-semibold">APIs &amp; Integración:</p>
+                            <ul class="list-disc list-inside text-[0.8rem] space-y-1">
+                                <li>REST, JSON, XML</li>
+                                <li>Swagger / Postman</li>
+                                <li>Oracle CC&amp;B / Unirest</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <p class="text-purple-300 font-semibold">Bases de datos:</p>
+                            <ul class="list-disc list-inside text-[0.8rem] space-y-1">
+                                <li>Oracle SQL Developer</li>
+                                <li>PostgreSQL / MySQL</li>
+                                <li>SQLite / H2</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <p class="text-purple-300 font-semibold">Herramientas:</p>
+                            <ul class="list-disc list-inside text-[0.8rem] space-y-1">
+                                <li>IntelliJ / Eclipse / VS Code / NetBeans</li>
+                                <li>Git / Jenkins</li>
+                                <li>MobaXterm / WinSCP / BeyondCompare</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <p class="text-purple-300 font-semibold">Testing &amp; Calidad:</p>
+                            <ul class="list-disc list-inside text-[0.8rem] space-y-1">
+                                <li>JUnit / QA funcional</li>
+                                <li>Postman / SOAPUI</li>
+                                <li>Lombok / MapStruct</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <p class="text-purple-300 font-semibold">Metodologías:</p>
+                            <ul class="list-disc list-inside text-[0.8rem] space-y-1">
+                                <li>Scrum / Kanban</li>
+                                <li>Integración continua (CI)</li>
+                                <li>Documentación asistida con IA</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <p class="text-purple-300 font-semibold">Front / Presentación:</p>
+                            <ul class="list-disc list-inside text-[0.8rem] space-y-1">
+                                <li>HTML / CSS / JavaScript</li>
+                                <li>Thymeleaf</li>
+                                <li>Diseño de portafolio personal</li>
+                            </ul>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- COLUMNA DERECHA -->
+            <section class="w-full md:w-1/2 border-t md:border-t-0 md:border-l border-purple-500/30 md:pl-6 pt-4 md:pt-0 space-y-6 text-sm leading-relaxed">
+
+                <!-- PERFIL PROFESIONAL -->
+                <div>
+                    <h3 class="text-lg text-cyan-300 mb-2">&gt; Perfil Profesional</h3>
+                    <p class="text-[0.8rem] text-purple-200/90">
+                        Analista de sistemas con más de 4 años de experiencia en entornos corporativos
+                        (desarrollo Java y gestión de proyectos IT). Enfocada en la implementación de
+                        aplicativos, microservicios, APIs REST y procesos ágiles, con capacidad para integrar
+                        soluciones técnicas con objetivos de negocio.
+                        Actualmente incorporo herramientas de IA para optimizar documentación técnica,
+                        agenda y preparación profesional.
+                    </p>
+                </div>
+
+                <!-- EXPERIENCIA -->
+                <div>
+                    <h3 class="text-lg text-cyan-300 mb-2">&gt; Experiencia Profesional</h3>
+                    <div class="text-[0.8rem]">
+                        <p class="font-semibold text-purple-100">
+                            Custom Software Engineering Analyst – Accenture (2021 – Presente)
+                        </p>
+                        <ul class="list-disc list-inside mt-2 space-y-1 text-[0.75rem] text-purple-200/90">
+                            <li>Desarrollo y mantenimiento de funcionalidades en Oracle CC&amp;B (2.6 / 2.9).</li>
+                            <li>Implementación de componentes Java para procesos de facturación y conciliación.</li>
+                            <li>Diseño e integración de APIs REST internas con enfoque en escalabilidad.</li>
+                            <li>Testing con JUnit, Postman y SOAPUI.</li>
+                            <li>Trabajo bajo metodologías ágiles (Scrum, Kanban) e integración continua.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- PROYECTOS PERSONALES -->
+                <div>
+                    <h3 class="text-lg text-cyan-300 mb-2">&gt; Proyectos Personales (2020 - 2025)</h3>
+                    <ul class="list-disc list-inside mt-2 space-y-1 text-[0.8rem] text-purple-200/90">
+                        <li>Aplicación Spring Boot + PostgreSQL con prácticas de testing automatizado y CI/CD.</li>
+                        <li>Portafolio personal desplegado online con estética propia y foco técnico.</li>
+                        <li>Integración de IA en documentación técnica</li>
+                    </ul>
+                </div>
+
+                <!-- EDUCACIÓN -->
+                <div>
+                    <h3 class="text-lg text-cyan-300 mb-2">&gt; Educación y Formación</h3>
+                    <div class="space-y-2 text-[0.8rem] text-purple-200/90">
+                        <p><strong class="text-purple-100">Tecnicatura Superior en Programación</strong> – Teclab</p>
+                        <p><strong class="text-purple-100">Bachillerato en Ciencias Naturales</strong> – Liceo Victor Mercante</p>
+                        <p class="text-[0.7rem] text-purple-400">
+                            Cursos complementarios: Java, Spring Boot, Microservicios, API REST, SQL.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- STACK -->
+                <div>
+                    <h3 class="text-lg text-cyan-300 mb-2">&gt; Stack actual</h3>
+                    <p class="text-[0.8rem] text-purple-200/90">
+                        Java 17 · Spring Boot 3.x · Maven · Jenkins · REST APIs · PostgreSQL · Oracle · Git · IntelliJ · Postman
+                    </p>
+                </div>
+            </section>
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="w-full pt-4 mt-8 border-t border-purple-500/30 text-center text-[0.7rem] text-purple-300 max-w-6xl mx-auto">
+            <p class="leading-relaxed">
+                Yesica Mabel Puerto | 📍 Buenos Aires, Argentina |
+                <a href="https://github.com/moondolphin" target="_blank" class="text-cyan-300 hover:underline">GitHub</a> |
+                <a href="https://ar.linkedin.com/in/yesica-mabel-puerto-968b27170" target="_blank" class="text-cyan-300 hover:underline">LinkedIn</a>
+            </p>
+        </footer>
+
+    </body>
+</html>

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yesica Mabel Puerto - Escritora y Poeta</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Special+Elite&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos para capturar la esencia del collage vintage */
+        body {
+            font-family: 'Lora', serif;
+            
+            /* --- PARA CAMBIAR EL COLOR DE FONDO --- */
+            /* Este es el color que se muestra si la imagen de fondo no carga. */
+            /* Puedes cambiar el código hexadecimal (#bfab88) o eliminar esta línea si no quieres un color de respaldo. */
+            background-color: #bfab88; 
+
+            /* --- PARA CAMBIAR LA IMAGEN DE FONDO DE TODA LA PÁGINA --- */
+            /* Reemplaza la URL dentro de url('...') con el enlace a tu propia imagen de papel viejo. */
+            background-image: url('./img/background.png');
+            
+            background-size: cover;
+            background-position: center center;
+            background-attachment: fixed; /* Mantiene el fondo fijo al hacer scroll */
+            background-repeat: no-repeat;
+            color: #3a3a3a;
+            position: relative;
+        }
+        
+        /* Efecto de ruido global para simular una foto analógica */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('https://www.transparenttextures.com/patterns/noise.png');
+            /* Ajustado el valor de opacidad. Puedes cambiar este valor (ej: 0.05, 0.15, etc.) */
+            opacity: 0.10; 
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* Fuente que simula una máquina de escribir */
+        .font-typewriter {
+            font-family: 'Special Elite', monospace;
+        }
+
+/* --- ESTILOS PARA LA ANIMACIÓN DE MÁQUINA DE ESCRIBIR --- */
+        .typewriter-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 56px; /* Evita que el layout salte */
+        }
+
+        .blinking-cursor {
+            font-weight: bold;
+            font-size: 1.25rem; /* Ajusta el tamaño del cursor para que coincida con el texto */
+            color: #4a4a4a;
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            from, to {
+                color: transparent;
+            }
+            50% {
+                color: #4a4a4a;
+            }
+        } 
+        /* Superposición de textura sutil (opcional con el nuevo fondo, pero puede añadir profundidad) */
+        .texture-overlay::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('https://www.transparenttextures.com/patterns/subtle-grunge.png');
+            opacity: 0.10;
+            pointer-events: none;
+        }
+
+        /* Efecto de brillo para los ítems interactivos */
+        .highlight-item {
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+        }
+        
+        /* Se quita el border-radius para permitir formas irregulares */
+        .highlight-item.rounded {
+             border-radius: 50%;
+        }
+
+        .highlight-item:hover {
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 15px rgba(255, 255, 224, 0.9));
+        }
+
+        /* Estilo del Popup (papel desgastado) */
+        #popup {
+            background-color: #faf6eb;
+            background-image: url('./img/background.png');
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid #dcd3b8;
+            padding: 2rem;
+            position: relative;
+            clip-path: polygon(
+                0% 5%, 5% 0%, 95% 0%, 100% 5%, 
+                100% 95%, 95% 100%, 5% 100%, 0% 95%,
+                0% 60%, 3% 58%, 0% 20%, 4% 18%
+            ); /* Simula bordes irregulares y rotos */
+        }
+        
+        #popup-content {
+             white-space: pre-wrap;
+             word-wrap: break-word;
+             line-height: 1.8;
+             color: #3a3a3a;
+        }
+
+        /* Decoraciones de fondo con elementos del collage */
+        .collage-bg {
+            position: relative;
+            overflow: hidden;
+        }
+        .collage-element {
+            position: absolute;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- SECCIÓN 1: PRESENTACIÓN PRINCIPAL -->
+    <section id="inicio" class="h-screen w-full flex items-center justify-center relative collage-bg texture-overlay">
+        <!-- Elementos decorativos del collage -->
+        <img src="./img/marilet.png" alt="[Imagen de mariposa]" class="collage-element w-48 h-50 -top-10 -left-10 rotate-12" style="opacity: 0.8;">
+        <img src="./img/taza1.png" alt="[Imagen de taza de café]" class="collage-element w-64 h-64 -bottom-10 -right-10 -rotate-12" style="opacity: 0.8;">
+        <img src="./img/marip.png" alt="[Marcador de posición para imagen de collage]" class="collage-element w-40 top-1/4 right-[10%]" style="transform: rotate(8deg); opacity: 0.9;">
+        <img src="./img/corsage.png" alt="[Marcador de posición para imagen de collage]" class="collage-element w-32 bottom-[15%] left-[10%]" style="transform: rotate(-10deg); opacity: 0.8;">
+        <img src="./img/taza2.png" alt="[Marcador de posición para imagen de collage]" class="collage-element w-48 top-[10%] right-[40%]" style="transform: rotate(-3deg); opacity: 0.8;">
+
+        
+        <div class="text-center z-10 p-4">
+            <h1 class="text-5xl md:text-7xl font-bold text-gray-800" style="font-family: 'Lora', serif;">Yesica Mabel Puerto</h1>
+            <!-- Contenedor para la animación de máquina de escribir -->
+            <div class="typewriter-container">
+                <p id="typewriter-text" class="font-typewriter text-lg md:text-xl mt-4 text-gray-700"></p>
+                <span class="blinking-cursor font-typewriter text-lg md:text-xl mt-4 text-gray-700">|</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECCIÓN 2: TRABAJOS Y PUBLICACIONES -->
+    <section id="trabajos" class="py-20 px-4 md:px-10 relative collage-bg">
+        <!-- Elementos decorativos -->
+        <img src="https://images.unsplash.com/photo-1456325504743-79b1a5a4bf4d?q=80&w=2070&auto=format&fit=crop" alt="[Imagen de máquina de escribir]" class="collage-element w-80 h-80 top-1/4 -left-20 transform -rotate-12" style="opacity: 0.08;">
+        <img src="https://images.unsplash.com/photo-1559523161-ec7e4b5d49ff?q=80&w=1935&auto=format&fit=crop" alt="[Imagen de pluma]" class="collage-element w-40 h-40 bottom-10 right-5 transform rotate-45" style="opacity: 0.07;">
+
+        <div class="container mx-auto grid md:grid-cols-2 gap-12 z-10">
+            <!-- Columna Izquierda: Trabajos Multimedia -->
+            <div class="p-6 bg-white/40 backdrop-blur-sm rounded-lg shadow-lg border border-white/50">
+                <h2 class="font-typewriter text-3xl mb-6 border-b-2 border-gray-500 pb-2">Trabajos Multimedia</h2>
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-4">
+                        <img src="https://images.unsplash.com/photo-1541167760496-1628856ab772?q=80&w=80&h=80&auto=format&fit=crop" alt="[Imagen de taza de café]" class="rounded-full border-2 border-amber-800/50 object-cover w-20 h-20">
+                        <div>
+                            <h3 class="font-bold text-lg">Nocturno en la Ciudad</h3>
+                            <p class="text-sm">Un video-poema sobre la soledad y las luces de neón.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <img src="https://images.unsplash.com/photo-1578899695458-5c94a43a2993?q=80&w=80&h=80&auto=format&fit=crop" alt="[Imagen de taza de té]" class="rounded-full border-2 border-amber-800/50 object-cover w-20 h-20">
+                        <div>
+                            <h3 class="font-bold text-lg">El eco de los girasoles</h3>
+                            <p class="text-sm">Audio-relato con paisajes sonoros del campo.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <img src="https://images.unsplash.com/photo-1627820484332-6f29d282de59?q=80&w=80&h=80&auto=format&fit=crop" alt="[Imagen de mate]" class="rounded-full border-2 border-amber-800/50 object-cover w-20 h-20">
+                        <div>
+                            <h3 class="font-bold text-lg">Collage de un Gato Negro</h3>
+                            <p class="text-sm">Una experiencia web interactiva sobre la superstición.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Publicaciones -->
+            <div class="p-6 bg-white/40 backdrop-blur-sm rounded-lg shadow-lg border border-white/50">
+                <h2 class="font-typewriter text-3xl mb-6 border-b-2 border-gray-500 pb-2">Publicaciones</h2>
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-4">
+                        <img src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=80&h=80&auto=format&fit=crop" alt="[Imagen de libro antiguo]" class="rounded-full border-2 border-amber-800/50 object-cover w-20 h-20">
+                        <div>
+                            <a class="font-bold text-lg" href="https://www.ninapezediciones.com.ar/poesia/juvenil-adultos/las-pequenas-cosas-multiples-autoras">Las pequeñas cosas (2022)</a>
+                            <p class="text-sm">Libro de poemas compilado por Jessica Boianover</p>
+                            <p class="text-sm">Editorial de Niña Pez Ediciones</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <img src="https://images.unsplash.com/photo-1586348943529-bea36bff28db?q=80&w=80&h=80&auto=format&fit=crop" alt="[Imagen de pluma y tinta]" class="rounded-full border-2 border-amber-800/50 object-cover w-20 h-20">
+                        <div>
+                            <a class="font-bold text-lg" href="https://www.dunken.org/SYS.shop/index.php?id=14915">Convergencias (2016)"</a>
+                            <p class="text-sm"> Compilado y corregido por el autor Fernando Veglia</p>
+                            <p class="text-sm"> Editorial Dunken</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <img src="https://images.unsplash.com/photo-1526243741027-444d633d7365?q=80&w=80&h=80&auto=format&fit=crop" alt="[Imagen de antología]" class="rounded-full border-2 border-amber-800/50 object-cover w-20 h-20">
+                        <div>
+                            <h3 class="font-bold text-lg">Voces del Sur Profundo (2021)</h3>
+                            <p class="text-sm">Participación con tres poemas inéditos.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECCIÓN 3: COLLAGE INTERACTIVO -->
+    <section id="fragmentos" class="min-h-screen py-20 px-4 relative collage-bg texture-overlay flex items-center justify-center">
+        <!-- Elementos decorativos del collage para la sección 3 -->
+        <img src="https://placehold.co/150x250/e2e8f0/adb5bd?text=Elemento+A" alt="[Marcador de posición para imagen de collage]" class="collage-element w-32 top-[5%] left-[5%]" style="transform: rotate(-15deg); opacity: 0.18;">
+        <img src="https://placehold.co/300x200/e2e8f0/adb5bd?text=Elemento+B" alt="[Marcador de posición para imagen de collage]" class="collage-element w-56 bottom-[10%] right-[8%]" style="transform: rotate(12deg); opacity: 0.2;">
+        <img src="https://placehold.co/200x200/e2e8f0/adb5bd?text=Elemento+C" alt="[Marcador de posición para imagen de collage]" class="collage-element w-40 top-[15%] right-[10%]" style="transform: rotate(5deg); opacity: 0.15;">
+        <img src="https://placehold.co/100x200/e2e8f0/adb5bd?text=Elemento+D" alt="[Marcador de posición para imagen de collage]" class="collage-element w-24 bottom-[20%] left-[25%]" style="transform: rotate(3deg); opacity: 0.22;">
+
+
+        <div class="container mx-auto text-center z-10">
+            <h2 class="font-typewriter text-4xl mb-4 text-gray-800">Fragmentos</h2>
+            <p class="mb-16 max-w-2xl mx-auto text-gray-700">Haz click en los símbolos para descubrir un pensamiento, un verso, un recuerdo...</p>
+            
+            <div class="relative w-full max-w-4xl h-[600px] mx-auto">
+                <!-- Items interactivos dispersos como un collage -->
+                <div class="absolute top-[10%] left-[15%] z-20">
+                    <img src="https://images.unsplash.com/photo-1529946179074-97a7a6451a5c?q=80&w=200&auto=format&fit=crop" alt="[Imagen de mariposa]" class="highlight-item rounded w-20 h-20 object-cover" onclick="showPopup('Mariposa', 'Hay algo en el aleteo de una mariposa que se parece a un pensamiento fugaz. Nace, se muestra en todo su esplendor y desaparece, dejándonos solo la estela de su belleza y la pregunta de si realmente estuvo allí.')">
+                </div>
+                 <div class="absolute top-[30%] left-[75%] z-20">
+                    <img src="https://images.unsplash.com/photo-1549439602-4324f733d242?q=80&w=200&auto=format&fit=crop" alt="[Imagen de calavera]" class="highlight-item rounded w-24 h-24 object-cover" onclick="showPopup('Calavera', 'Mirar una calavera no es pensar en la muerte, sino en la vida que la habitó. Es un homenaje a las risas, a los llantos, a los secretos que guardó. Es el silencio que queda después de la última palabra.')">
+                </div>
+                <div class="absolute top-[50%] left-[5%] z-20">
+                    <img src="https://images.unsplash.com/photo-1541596213023-de16f63458a2?q=80&w=200&auto=format&fit=crop" alt="[Imagen de girasol]" class="highlight-item rounded w-28 h-28 object-cover" onclick="showPopup('Girasol', 'Creen que el girasol busca la luz, pero en realidad, la luz lo busca a él. Se rinde ante su devoción, ante esa capacidad de encontrar el sol incluso en los días más grises. Todos deberíamos ser un poco más como los girasoles.')">
+                </div>
+                <div class="absolute top-[5%] left-[60%] z-20">
+                    <img src="https://images.unsplash.com/photo-1511920170033-f832d7cfb2a2?q=80&w=200&auto=format&fit=crop" alt="[Imagen de taza de café]" class="highlight-item rounded w-20 h-20 object-cover" onclick="showPopup('Café', 'El café de la mañana es un pacto. Un acuerdo entre mi alma dormida y el día que espera. En su amargura encuentro la fuerza, en su calor, el consuelo. Es el primer poema que escribo cada día, sin tinta ni papel.')">
+                </div>
+                <div class="absolute top-[70%] left-[65%] z-20">
+                    <img src="https://images.unsplash.com/photo-1593482181156-85a86145b378?q=80&w=200&auto=format&fit=crop" alt="[Imagen de gato]" class="highlight-item rounded w-24 h-24 object-cover" onclick="showPopup('Gato', 'El gato no te pertenece, te permite compartir su tiempo. En su silencio hay una sabiduría antigua, en su ronroneo, la paz que perdimos. Es el guardián de los misterios pequeños, de los rincones olvidados del alma.')">
+                </div>
+                <div class="absolute top-[85%] left-[20%] z-20">
+                    <!-- ### IMAGEN ACTUALIZADA ### -->
+                    <!-- Esta es la nueva imagen de la taza de té sin fondo blanco -->
+                    <!-- Puedes reemplazar la URL con la tuya si la subes a algún sitio -->
+                    <img src="https://i.ibb.co/6RJ6M8q/vintage-tea-cup-png.png" alt="[Imagen de taza de té]" class="highlight-item w-32 object-contain" onclick="showPopup('Té', 'Una taza de té es una pausa. Un paréntesis en la ruidosa oración del mundo. Es el sabor de la calma, el aroma de la introspección. Es un ritual para hablar con uno mismo sin necesidad de palabras.')">
+                </div>
+                 <div class="absolute top-[25%] left-[40%] z-20">
+                    <img src="https://images.unsplash.com/photo-1550989460-0d97f2489870?q=80&w=200&auto=format&fit=crop" alt="[Imagen de luna]" class="highlight-item rounded w-24 h-24 object-cover" onclick="showPopup('Luna', 'La luna no tiene luz propia. Es un espejo. Quizás por eso nos fascina tanto, porque en ella no vemos un astro, sino el reflejo de nuestros propios sueños, miedos y anhelos. Nos devuelve la mirada.')">
+                </div>
+                <div class="absolute top-[60%] left-[45%] z-20">
+                    <img src="https://images.unsplash.com/photo-1619642751138-f491a789365c?q=80&w=200&auto=format&fit=crop" alt="[Imagen de pluma de escribir]" class="highlight-item rounded w-20 h-20 object-cover" onclick="showPopup('Pluma', 'Antes de la tecla, existía la pluma. Un puente directo entre la tinta y la vena. Cada trazo era una decisión, cada mancha, una cicatriz en el papel. Escribir era un acto físico, un baile, una herida.')">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECCIÓN 4: PIE DE PÁGINA -->
+    <footer class="bg-[#3a3a3a] text-gray-300 py-10 px-4 font-typewriter texture-overlay">
+        <div class="container mx-auto text-center">
+            <p>Más información y contacto:</p>
+            <p class="mt-2">autora.ejemplo@email.com</p>
+            <div class="flex justify-center space-x-4 mt-4">
+                <a href="#" class="hover:text-white">Instagram</a>
+                <a href="#" class="hover:text-white">Twitter</a>
+                <a href="#" class="hover:text-white">Blog</a>
+            </div>
+            <p class="text-xs text-gray-500 mt-8">&copy; 2024 Nombre de la Autora. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+
+    <!-- MODAL POPUP -->
+    <div id="popup-overlay" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-[110] hidden" onclick="hidePopup()">
+        <div id="popup" class="w-full max-w-2xl max-h-[80vh] overflow-y-auto" onclick="event.stopPropagation()">
+            <h3 id="popup-title" class="font-typewriter text-2xl mb-4 border-b border-gray-400/50 pb-2"></h3>
+            <p id="popup-content" class="text-lg"></p>
+            <button class="absolute top-4 right-6 font-typewriter text-2xl text-gray-600 hover:text-black" onclick="hidePopup()">X</button>
+        </div>
+    </div>
+
+
+    <script>
+        // --- Lógica para el Popup Interactivo ---
+
+        const popupOverlay = document.getElementById('popup-overlay');
+        const popupTitle = document.getElementById('popup-title');
+        const popupContent = document.getElementById('popup-content');
+        const defaultTexts = {
+            Mariposa: 'Hay algo en el aleteo de una mariposa que se parece a un pensamiento fugaz. Nace, se muestra en todo su esplendor y desaparece, dejándonos solo la estela de su belleza y la pregunta de si realmente estuvo allí.',
+            Calavera: 'Mirar una calavera no es pensar en la muerte, sino en la vida que la habitó. Es un homenaje a las risas, a los llantos, a los secretos que guardó. Es el silencio que queda después de la última palabra.',
+            Girasol: 'Creen que el girasol busca la luz, pero en realidad, la luz lo busca a él. Se rinde ante su devoción, ante esa capacidad de encontrar el sol incluso en los días más grises. Todos deberíamos ser un poco más como los girasoles.',
+            Café: 'El café de la mañana es un pacto. Un acuerdo entre mi alma dormida y el día que espera. En su amargura encuentro la fuerza, en su calor, el consuelo. Es el primer poema que escribo cada día, sin tinta ni papel.',
+            Gato: 'El gato no te pertenece, te permite compartir su tiempo. En su silencio hay una sabiduría antigua, en su ronroneo, la paz que perdimos. Es el guardián de los misterios pequeños, de los rincones olvidados del alma.',
+            Té: 'Una taza de té es una pausa. Un paréntesis en la ruidosa oración del mundo. Es el sabor de la calma, el aroma de la introspección. Es un ritual para hablar con uno mismo sin necesidad de palabras.',
+            Luna: 'La luna no tiene luz propia. Es un espejo. Quizás por eso nos fascina tanto, porque en ella no vemos un astro, sino el reflejo de nuestros propios sueños, miedos y anhelos. Nos devuelve la mirada.',
+            Pluma: 'Antes de la tecla, existía la pluma. Un puente directo entre la tinta y la vena. Cada trazo era una decisión, cada mancha, una cicatriz en el papel. Escribir era un acto físico, un baile, una herida.'
+        };
+
+        function showPopup(title, content) {
+            // Permite que el contenido sea el predeterminado o uno personalizado
+            const textToShow = content || defaultTexts[title] || "Contenido no encontrado.";
+            popupTitle.textContent = title;
+            popupContent.textContent = textToShow;
+            popupOverlay.classList.remove('hidden');
+        }
+
+        function hidePopup() {
+            popupOverlay.classList.add('hidden');
+        }
+
+        // Cierra el popup con la tecla 'Escape'
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                hidePopup();
+            }
+        });
+
+  // --- Lógica para la Animación de Máquina de Escribir ---
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const typewriterElement = document.getElementById('typewriter-text');
+            const cursorElement = document.querySelector('.blinking-cursor');
+            
+            // ------------------------------------------------------------------
+            // --> ¡EDITA TUS 5 FRASES AQUÍ! <--
+            // Puedes cambiar, agregar o quitar frases en esta lista.
+            const phrases = [
+                "Poesía en fragmentos de tiempo...",
+                "Letras que beben café a medianoche...",
+                "El eco de una palabra no dicha...",
+                "Manuscritos encontrados en un sueño...",
+                "La tinta es la sangre del recuerdo..."
+            ];
+            // ------------------------------------------------------------------
+
+            let phraseIndex = 0;
+            let charIndex = 0;
+            let isDeleting = false;
+            let typingSpeed = 150; // ms
+            let deletingSpeed = 100; // ms
+            let pauseAfterTyping = 2500; // ms
+
+            function type() {
+                cursorElement.style.animation = 'none'; // Pausa el parpadeo al escribir
+                const currentPhrase = phrases[phraseIndex];
+
+                if (isDeleting) {
+                    // Borrando
+                    typewriterElement.textContent = currentPhrase.substring(0, charIndex - 1);
+                    charIndex--;
+                    if (charIndex === 0) {
+                        isDeleting = false;
+                        phraseIndex = (phraseIndex + 1) % phrases.length;
+                        setTimeout(type, 500); // Pausa antes de escribir la siguiente frase
+                    } else {
+                        setTimeout(type, deletingSpeed);
+                    }
+                } else {
+                    // Escribiendo
+                    typewriterElement.textContent = currentPhrase.substring(0, charIndex + 1);
+                    charIndex++;
+                    if (charIndex === currentPhrase.length) {
+                        isDeleting = true;
+                        cursorElement.style.animation = 'blink 1s step-end infinite'; // Reanuda el parpadeo
+                        setTimeout(type, pauseAfterTyping); // Pausa después de terminar de escribir
+                    } else {
+                        setTimeout(type, typingSpeed);
+                    }
+                }
+            }
+
+            // Inicia la animación
+            setTimeout(type, 1000);
+        });    
+        </script>
+</body>
+</html>
