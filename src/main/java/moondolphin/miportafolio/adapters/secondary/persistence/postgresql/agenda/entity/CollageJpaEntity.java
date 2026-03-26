@@ -22,7 +22,7 @@ public class CollageJpaEntity {
     @Column(name = "gif_url")
     private String gifUrl;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "quote", columnDefinition = "TEXT")
     private String quote;
 
     @Column(name = "fecha_referencia")

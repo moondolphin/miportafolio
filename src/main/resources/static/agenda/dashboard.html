@@ -342,7 +342,7 @@ async function cargarLinksRecientes() {
     try {
         const links = await apiGet('/admin/links');
         if (!links.length) { container.innerHTML = '<p class="text-xs" style="color:var(--text-soft);">Sin links aún.</p>'; return; }
-        container.innerHTML = links.slice(0, 5).map(l => `
+        container.innerHTML = [...links].reverse().slice(0, 5).map(l => `
             <div class="py-1" style="font-size:0.78rem; border-bottom:1px solid #fef3c7;">
                 <a href="${l.url}" target="_blank" class="font-medium hover:underline" style="color:var(--primary);">📎 ${l.titulo}</a>
                 ${l.descripcion ? `<p style="color:var(--text-soft);">${l.descripcion.substring(0,60)}${l.descripcion.length>60?'…':''}</p>` : ''}
@@ -372,7 +372,7 @@ async function cargarRecordatoriosProximos() {
     try {
         const todos = await apiGet('/admin/recordatorios');
         const hoy = fechaHoy();
-        const pendientes = todos.filter(r => r.estado === 'PENDIENTE' && r.fecha >= hoy)
+        const pendientes = todos.filter(r => r.fecha >= hoy)
                                .sort((a,b) => a.fecha.localeCompare(b.fecha))
                                .slice(0, 4);
         if (!pendientes.length) { container.innerHTML = '<p class="text-xs" style="color:var(--text-soft);">Sin recordatorios pendientes.</p>'; return; }

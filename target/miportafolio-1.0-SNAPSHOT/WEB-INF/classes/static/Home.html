@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home | Creatividad y Palabras</title>
+    <title>Home | Yesica Puerto</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -42,23 +42,6 @@
             opacity: 0.04;
             z-index: -1;
         }
-
-        /* Animación de "light leak" para el cambio de ambiente */
-        .light-leak {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            animation: time-flow 90s infinite linear;
-            z-index: -2;
-        }
-
-        @keyframes time-flow {
-            0% { background: radial-gradient(circle at 10% 90%, var(--color-light-violet) 0%, transparent 25%); }
-            25% { background: radial-gradient(circle at 90% 90%, var(--color-gold) 0%, transparent 30%); }
-            50% { background: radial-gradient(circle at 90% 10%, var(--color-moss-green) 0%, transparent 25%); }
-            75% { background: radial-gradient(circle at 10% 10%, var(--color-light-violet) 0%, transparent 30%); }
-            100% { background: radial-gradient(circle at 10% 90%, var(--color-light-violet) 0%, transparent 25%); }
-        }
         
         /* Efecto de líneas de escaneo Lo-fi */
         .scanlines {
@@ -90,12 +73,12 @@
         /* Cita de bienvenida con efecto neón */
         .epigraph {
             font-family: var(--font-serif);
-            font-size: 1.5rem; /* Ajustado de 1.75rem */
+            font-size: 1.25rem; /* Ajustado de 1.5rem */
             color: var(--color-text-primary);
             text-shadow: 0 0 8px var(--color-cyber-glow), 0 0 10px var(--color-cyber-pink);
         }
 
-        @media (min-width: 768px) { .epigraph { font-size: 2rem; } } /* Ajustado de 2.25rem */
+        @media (min-width: 768px) { .epigraph { font-size: 1.75rem; } } /* Ajustado de 2rem */
 
         /* --- NAVEGACIÓN --- */
         
@@ -171,7 +154,6 @@
 <body class="min-h-screen flex items-center justify-center p-4">
 
     <!-- Capas de efectos visuales -->
-    <div class="light-leak"></div>
     <div class="noise-overlay"></div>
     <div class="scanlines"></div>
     <div class="fallen-ceiling-oval"></div>
@@ -187,11 +169,11 @@
             <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"><path d="M22.56,3.44a3,3,0,0,0-4.24,0L2.67,19.09,1.09,22.91,4.91,21.33,20.56,5.67a1,1,0,0,0,0-1.42L18.33,2.02,17.67,2.67,19.9,4.9,20.56,4.24,14.33,10.5,13.5,9.67l-2,2,4.24,4.24,2-2-.83-.83L22.56,7.56,21.14,9l-2-2,1.42-1.42a1,1,0,0,0-1.42-1.42L17.72,5.59l-2,2,1.42,1.42,2.33-2.33,2.23,2.23a1,1,0,0,0,1.42,0l2.82-2.83A3,3,0,0,0,22.56,3.44Z"/></svg>
         </div>
     </div>
-    <div class="icon-frame icon-bottom-left">
-         <div class="corner-icon" aria-label="Notebook">
+    <a href="/agenda/login.html" class="icon-frame icon-bottom-left" style="cursor:pointer; text-decoration:none;" title="Agenda Mislun">
+         <div class="corner-icon" aria-label="Agenda Mislun">
             <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 2v14h14V5H5zm2 2h2v10H7V7zm4 0h6v2h-6V7z"/></svg>
         </div>
-    </div>
+    </a>
     <div class="icon-frame icon-bottom-right">
         <div class="corner-icon" aria-label="Notas musicales">
             <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
@@ -202,22 +184,21 @@
     <main class="text-center w-full max-w-4xl mx-auto z-10">
         <!-- Navegación principal -->
         <nav class="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16">
-             <div class="nav-item relative group">
-                <a href="#inspiracion">Inspiración</a>
-                <p class="tooltip absolute -bottom-10 left-1/2 -translate-x-1/2 w-max text-sm px-3 py-1 rounded-md">Música y arte.</p>
+            <div class="nav-item relative group">
+                <a href="/YesicaMabelPuerto.html" class="link-nueva-pagina">Escritura</a>
+                <p class="tooltip absolute -bottom-10 left-1/2 -translate-x-1/2 w-max text-sm px-3 py-1 rounded-md">Poesía, cuentos y novelas.</p>
             </div>
             <div class="nav-item relative group">
-                <a href="#programacion">Programación</a>
+                <a href="/proyectosdeprogramacion.html">Programación</a>
                 <p class="tooltip absolute -bottom-10 left-1/2 -translate-x-1/2 w-max text-sm px-3 py-1 rounded-md">Proyectos y código.</p>
             </div>
             <div class="nav-item relative group">
-                <a href="#fotografia">Fotografía</a>
+                <a href="/MisaLunaFotografía.html"  class="link-nueva-pagina">Fotografía</a>
                 <p class="tooltip absolute -bottom-10 left-1/2 -translate-x-1/2 w-max text-sm px-3 py-1 rounded-md">Blanco y negro.</p>
             </div>
-           
-			<div class="nav-item relative group">
-                <a href="#escritura">Escritura</a>
-                <p class="tooltip absolute -bottom-10 left-1/2 -translate-x-1/2 w-max text-sm px-3 py-1 rounded-md">Poesía, cuentos y novelas.</p>
+            <div class="nav-item relative group">
+                <a href="#inspiracion">Inspiración</a>
+                <p class="tooltip absolute -bottom-10 left-1/2 -translate-x-1/2 w-max text-sm px-3 py-1 rounded-md">Música y arte.</p>
             </div>
         </nav>
 
@@ -227,5 +208,27 @@
         </p>
     </main>
 
+    <script>
+            // Busca TODOS los enlaces que marcamos con nuestra clase especial
+            const enlacesExternos = document.querySelectorAll('.link-nueva-pagina');
+            
+            // Para cada uno de esos enlaces...
+            enlacesExternos.forEach(function(enlace) {
+                
+                // Le añade un 'escuchador' de clics
+                enlace.addEventListener('click', function(event) {
+                    
+                    // 1. Previene CUALQUIER otro comportamiento por defecto o de otros scripts
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
+                    // 2. Obtenemos la URL a la que queremos ir
+                    const url = this.getAttribute('href');
+                    
+                    // 3. Le ordenamos al navegador que abra esa URL en una nueva pestaña
+                    window.open(url, '_blank');
+                });
+            });
+        </script>
 </body>
 </html>
