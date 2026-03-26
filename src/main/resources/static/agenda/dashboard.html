@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Mislun — Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f7f0ff;
+            --primary: #8b5cf6;
+            --text: #3b1f6a;
+            --text-soft: #7c6a94;
+            --border: #e9d5ff;
+        }
+        * { box-sizing: border-box; }
+        body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; }
+        h1, h2, h3 { font-family: 'Cormorant Garamond', serif; }
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1rem 1.25rem;
+            height: 100%;
+        }
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: 'Cormorant Garamond', serif;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .ver-mas {
+            font-size: 0.7rem;
+            font-family: 'Inter', sans-serif;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 400;
+        }
+        .ver-mas:hover { text-decoration: underline; }
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.65rem;
+            font-weight: 500;
+        }
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            padding: 0.4rem 0;
+            border-bottom: 1px solid #f3e8ff;
+            font-size: 0.8rem;
+        }
+        .task-item:last-child { border-bottom: none; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+        .search-input {
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            width: 100%;
+            font-size: 0.8rem;
+            outline: none;
+            background: #fdfbff;
+            color: var(--text);
+        }
+        .search-input:focus { border-color: var(--primary); }
+        /* Calendario */
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; text-align: center; }
+        .cal-day { font-size: 0.6rem; padding: 2px 1px; border-radius: 4px; cursor: default; }
+        .cal-day.today { background: var(--primary); color: white; border-radius: 50%; font-weight: 600; }
+        .cal-day.has-tasks { position: relative; }
+        .cal-day.has-tasks::after {
+            content: '·';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--primary);
+            font-size: 0.85rem;
+            line-height: 0.5;
+        }
+        .cal-header { font-size: 0.55rem; color: var(--text-soft); font-weight: 600; padding: 1px; }
+        /* Collage preview */
+        .collage-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+        .collage-thumb { aspect-ratio: 1; overflow: hidden; border-radius: 6px; }
+        .collage-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .collage-thumb-text { aspect-ratio: 1; border-radius: 6px; display: flex; align-items: center; justify-content: center; padding: 4px; font-size: 0.6rem; color: #5b3e9b; text-align: center; overflow: hidden; background: #f3e8ff; }
+        /* Navbar */
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-soft);
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+        .nav-link:hover { background: var(--bg); color: var(--primary); }
+        .nav-link.active { background: #ede9fe; color: var(--primary); font-weight: 500; }
+        /* Mood selector */
+        .mood-btn {
+            font-size: 1.4rem;
+            cursor: pointer;
+            padding: 0.2rem;
+            border-radius: 50%;
+            transition: transform 0.15s;
+            border: 2px solid transparent;
+        }
+        .mood-btn:hover { transform: scale(1.2); }
+        .mood-btn.selected { border-color: var(--primary); background: #ede9fe; }
+        /* Scrollable lists */
+        .scroll-list { max-height: 160px; overflow-y: auto; }
+        .scroll-list::-webkit-scrollbar { width: 3px; }
+        .scroll-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 9px; }
+    </style>
+</head>
+<body>
+
+<!-- Top bar -->
+<header class="bg-white border-b sticky top-0 z-10" style="border-color: var(--border);">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <h1 class="text-xl font-bold" style="color: var(--primary);">Agenda Mislun</h1>
+        <div class="flex items-center gap-3">
+            <span id="username-label" class="text-xs" style="color: var(--text-soft);"></span>
+            <span id="today-label" class="text-xs hidden md:block" style="color: var(--text-soft);"></span>
+            <button onclick="logout()" class="text-xs px-3 py-1.5 rounded-lg" style="border:1px solid var(--border); color:var(--text-soft);">Salir</button>
+        </div>
+    </div>
+</header>
+
+<div class="max-w-7xl mx-auto px-4 py-4 flex gap-4">
+
+    <!-- Sidebar -->
+    <aside class="hidden lg:block w-44 flex-shrink-0">
+        <nav class="sticky top-20 space-y-1">
+            <a href="/agenda/tareas.html" class="nav-link">📋 Tareas</a>
+            <a href="/agenda/notas.html" class="nav-link">📝 Notas</a>
+            <a href="/agenda/journal.html" class="nav-link">📖 Journal</a>
+            <a href="/agenda/links.html" class="nav-link">🔗 Links</a>
+            <a href="/agenda/recordatorios.html" class="nav-link">🔔 Recordatorios</a>
+            <a href="/agenda/mood.html" class="nav-link">🌸 Mood</a>
+            <a href="/agenda/collage.html" class="nav-link">🎞 Collage</a>
+            <a href="/agenda/etiquetas.html" class="nav-link">🏷 Etiquetas</a>
+            <hr style="border-color: var(--border); margin: 0.5rem 0;">
+            <a href="/agenda/admin.html" id="admin-link" class="nav-link hidden">⚙️ Admin</a>
+            <a href="/Home.html" class="nav-link">← Portafolio</a>
+        </nav>
+    </aside>
+
+    <!-- Main grid -->
+    <main class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-min">
+
+        <!-- TAREAS HOY -->
+        <div class="card" style="background:#fdf4ff;">
+            <div class="card-title">
+                📋 Tareas de hoy
+                <a href="/agenda/tareas.html" class="ver-mas">+ nueva / ver todas</a>
+            </div>
+            <div id="tareas-hoy" class="scroll-list">
+                <p class="text-xs" style="color:var(--text-soft);">Cargando...</p>
+            </div>
+        </div>
+
+        <!-- BUSCADOR + MOOD + ETIQUETAS -->
+        <div class="card">
+            <div class="card-title">🔍 Buscador</div>
+            <div class="flex gap-2 mb-3">
+                <input type="text" id="buscar-input" class="search-input" placeholder="buscar en tareas, notas, journal, links...">
+                <button onclick="buscar()" class="px-3 py-1.5 rounded-lg text-white text-xs flex-shrink-0" style="background:var(--primary);">Ir</button>
+            </div>
+            <div id="buscar-resultado" class="text-xs hidden scroll-list" style="color:var(--text-soft);"></div>
+            <hr style="border-color:var(--border); margin: 0.75rem 0;">
+            <div class="card-title" style="margin-bottom:0.5rem;">🌸 Mood de hoy</div>
+            <div id="mood-hoy" class="flex gap-2 mb-1">
+                <button class="mood-btn" data-valor="MUY_BIEN" title="Muy bien" onclick="registrarMood(this)">✨</button>
+                <button class="mood-btn" data-valor="BIEN"     title="Bien"     onclick="registrarMood(this)">🌸</button>
+                <button class="mood-btn" data-valor="NEUTRO"   title="Neutro"   onclick="registrarMood(this)">🌙</button>
+                <button class="mood-btn" data-valor="MAL"      title="Mal"      onclick="registrarMood(this)">🌧</button>
+                <button class="mood-btn" data-valor="MUY_MAL"  title="Muy mal"  onclick="registrarMood(this)">🌑</button>
+            </div>
+            <p id="mood-nota" class="text-xs italic hidden" style="color:var(--text-soft);"></p>
+            <p id="mood-ok" class="text-xs text-green-600 hidden">mood guardado ✓</p>
+        </div>
+
+        <!-- CALENDARIO -->
+        <div class="card">
+            <div class="card-title">
+                📅 <span id="cal-mes-label"></span>
+            </div>
+            <div class="cal-grid mb-1" id="cal-headers"></div>
+            <div class="cal-grid" id="cal-days"></div>
+        </div>
+
+        <!-- NOTAS SUELTAS -->
+        <div class="card" style="background:#fdf8ff;">
+            <div class="card-title">
+                📝 Notas sueltas
+                <a href="/agenda/notas.html" class="ver-mas">+ nueva / ver todas</a>
+            </div>
+            <div id="notas-recientes" class="scroll-list space-y-2">
+                <p class="text-xs" style="color:var(--text-soft);">Cargando...</p>
+            </div>
+        </div>
+
+        <!-- LINKS -->
+        <div class="card" style="background:#fffbeb;">
+            <div class="card-title">
+                🔗 Links
+                <a href="/agenda/links.html" class="ver-mas">+ nuevo / ver todos</a>
+            </div>
+            <div id="links-recientes" class="scroll-list space-y-2">
+                <p class="text-xs" style="color:var(--text-soft);">Cargando...</p>
+            </div>
+        </div>
+
+        <!-- JOURNAL -->
+        <div class="card" style="background:#f0f9ff;">
+            <div class="card-title">
+                📖 Journal
+                <a href="/agenda/journal.html" class="ver-mas">+ entrada / ver todas</a>
+            </div>
+            <div id="journal-reciente" class="scroll-list">
+                <p class="text-xs" style="color:var(--text-soft);">Cargando...</p>
+            </div>
+        </div>
+
+        <!-- Etiquetas rápidas -->
+        <div class="card">
+            <div class="card-title">
+                🏷 Etiquetas
+                <a href="/agenda/etiquetas.html" class="ver-mas">gestionar</a>
+            </div>
+            <div id="etiquetas-list" class="flex flex-wrap gap-1.5">
+                <p class="text-xs" style="color:var(--text-soft);">Cargando...</p>
+            </div>
+        </div>
+
+        <!-- RECORDATORIOS -->
+        <div class="card" style="background:#f0fdf4;">
+            <div class="card-title">
+                🔔 Recordatorios
+                <a href="/agenda/recordatorios.html" class="ver-mas">+ nuevo / ver todos</a>
+            </div>
+            <div id="recordatorios-proximos" class="scroll-list space-y-2">
+                <p class="text-xs" style="color:var(--text-soft);">Cargando...</p>
+            </div>
+        </div>
+
+        <!-- COLLAGE -->
+        <div class="card" style="background:linear-gradient(135deg,#fce7f3,#ede9fe,#e0f2fe); min-height: 220px;">
+            <div class="card-title">
+                🎞 Collage
+                <a href="/agenda/collage.html" class="ver-mas">gestionar</a>
+            </div>
+            <div id="collage-bloque">
+                <p class="text-xs" style="color:var(--text-soft);">Cargando...</p>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- Resultado buscador modal simple -->
+<div id="modal-buscar" class="fixed inset-0 bg-black bg-opacity-30 hidden z-50 flex items-center justify-center p-4" onclick="cerrarModal()">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto" onclick="event.stopPropagation()" style="border:1px solid #e9d5ff;">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold" style="font-family:'Cormorant Garamond',serif; color:#3b1f6a;">Resultados</h2>
+            <button onclick="cerrarModal()" class="text-sm" style="color:#7c6a94;">✕ cerrar</button>
+        </div>
+        <div id="modal-contenido"></div>
+    </div>
+</div>
+
+<script src="/agenda/js/api.js"></script>
+<script>
+requireAuth();
+
+// ── Init ──────────────────────────────────────────────────
+document.getElementById('username-label').textContent = getUsername() || '';
+document.getElementById('today-label').textContent = new Date().toLocaleDateString('es-AR', {weekday:'long', day:'numeric', month:'long'});
+
+if (getRole() === 'ADMIN') {
+    document.getElementById('admin-link').classList.remove('hidden');
+}
+
+Promise.all([
+    cargarTareasHoy(),
+    cargarNotasRecientes(),
+    cargarLinksRecientes(),
+    cargarJournalReciente(),
+    cargarRecordatoriosProximos(),
+    cargarEtiquetas(),
+    cargarCollage(),
+    cargarMoodHoy()
+]);
+
+renderCalendario();
+
+// ── Tareas de hoy ─────────────────────────────────────────
+async function cargarTareasHoy() {
+    const container = document.getElementById('tareas-hoy');
+    try {
+        const hoy = fechaHoy();
+        const tareas = await apiGet('/admin/tareas?fecha=' + hoy);
+        if (!tareas.length) { container.innerHTML = '<p class="text-xs" style="color:var(--text-soft);">Sin tareas para hoy.</p>'; return; }
+        container.innerHTML = tareas.map(t => `
+            <div class="task-item">
+                <span class="dot" style="background:${t.prioridad==='ALTA'?'#f87171':t.prioridad==='MEDIA'?'#fbbf24':'#86efac'}"></span>
+                <div class="flex-1">
+                    <span class="${t.estado==='COMPLETADA'?'line-through opacity-50':''}">${t.titulo}</span>
+                    ${t.horaInicio ? `<span class="text-xs ml-1" style="color:var(--text-soft);">${t.horaInicio.substring(0,5)}</span>` : ''}
+                </div>
+                <span class="badge ${ESTADO_BADGE[t.estado]||''}">${t.estado}</span>
+            </div>`).join('');
+    } catch { container.innerHTML = '<p class="text-xs text-red-400">Error al cargar tareas.</p>'; }
+}
+
+// ── Notas recientes ───────────────────────────────────────
+async function cargarNotasRecientes() {
+    const container = document.getElementById('notas-recientes');
+    try {
+        const notas = await apiGet('/admin/notas');
+        if (!notas.length) { container.innerHTML = '<p class="text-xs" style="color:var(--text-soft);">Sin notas aún.</p>'; return; }
+        container.innerHTML = notas.slice(0, 5).map(n => `
+            <div class="py-1 border-b" style="border-color:#f3e8ff; font-size:0.78rem;">
+                ${n.titulo ? `<p class="font-medium">${n.titulo}</p>` : ''}
+                <p style="color:var(--text-soft);">${n.contenido.substring(0,80)}${n.contenido.length>80?'…':''}</p>
+            </div>`).join('');
+    } catch { container.innerHTML = '<p class="text-xs text-red-400">Error al cargar notas.</p>'; }
+}
+
+// ── Links recientes ───────────────────────────────────────
+async function cargarLinksRecientes() {
+    const container = document.getElementById('links-recientes');
+    try {
+        const links = await apiGet('/admin/links');
+        if (!links.length) { container.innerHTML = '<p class="text-xs" style="color:var(--text-soft);">Sin links aún.</p>'; return; }
+        container.innerHTML = links.slice(0, 5).map(l => `
+            <div class="py-1" style="font-size:0.78rem; border-bottom:1px solid #fef3c7;">
+                <a href="${l.url}" target="_blank" class="font-medium hover:underline" style="color:var(--primary);">📎 ${l.titulo}</a>
+                ${l.descripcion ? `<p style="color:var(--text-soft);">${l.descripcion.substring(0,60)}${l.descripcion.length>60?'…':''}</p>` : ''}
+            </div>`).join('');
+    } catch { container.innerHTML = '<p class="text-xs text-red-400">Error al cargar links.</p>'; }
+}
+
+// ── Journal reciente ──────────────────────────────────────
+async function cargarJournalReciente() {
+    const container = document.getElementById('journal-reciente');
+    try {
+        const entradas = await apiGet('/admin/journal');
+        if (!entradas.length) { container.innerHTML = '<p class="text-xs" style="color:var(--text-soft);">Sin entradas aún.</p>'; return; }
+        const ultima = entradas[entradas.length - 1];
+        container.innerHTML = `
+            <p class="text-xs mb-1" style="color:var(--text-soft);">
+                ${ultima.fechaReferencia ? formatearFecha(ultima.fechaReferencia) : ''}
+                ${ultima.titulo ? '— ' + ultima.titulo : ''}
+            </p>
+            <p class="text-sm italic" style="color:#5b3e9b;">"${ultima.contenido.substring(0,180)}${ultima.contenido.length>180?'…':''}"</p>`;
+    } catch { container.innerHTML = '<p class="text-xs text-red-400">Error al cargar journal.</p>'; }
+}
+
+// ── Recordatorios próximos ────────────────────────────────
+async function cargarRecordatoriosProximos() {
+    const container = document.getElementById('recordatorios-proximos');
+    try {
+        const todos = await apiGet('/admin/recordatorios');
+        const hoy = fechaHoy();
+        const pendientes = todos.filter(r => r.estado === 'PENDIENTE' && r.fecha >= hoy)
+                               .sort((a,b) => a.fecha.localeCompare(b.fecha))
+                               .slice(0, 4);
+        if (!pendientes.length) { container.innerHTML = '<p class="text-xs" style="color:var(--text-soft);">Sin recordatorios pendientes.</p>'; return; }
+        container.innerHTML = pendientes.map(r => `
+            <div class="py-1 border-b" style="border-color:#dcfce7; font-size:0.78rem;">
+                <p class="font-medium">🔔 ${r.titulo}</p>
+                <p style="color:var(--text-soft);">${formatearFecha(r.fecha)}${r.hora ? ' · ' + r.hora.substring(0,5) : ''}</p>
+            </div>`).join('');
+    } catch { container.innerHTML = '<p class="text-xs text-red-400">Error al cargar recordatorios.</p>'; }
+}
+
+// ── Etiquetas ─────────────────────────────────────────────
+async function cargarEtiquetas() {
+    const container = document.getElementById('etiquetas-list');
+    try {
+        const etiquetas = await apiGet('/admin/etiquetas');
+        if (!etiquetas.length) { container.innerHTML = '<p class="text-xs" style="color:var(--text-soft);">Sin etiquetas.</p>'; return; }
+        container.innerHTML = etiquetas.map(e => `
+            <span class="badge" style="background:${e.color||'#ede9fe'}; color:#3b1f6a;">${e.nombre}</span>`).join('');
+    } catch { container.innerHTML = ''; }
+}
+
+// ── Collage ───────────────────────────────────────────────
+async function cargarCollage() {
+    const container = document.getElementById('collage-bloque');
+    try {
+        const entradas = await apiGet('/admin/collage');
+        if (!entradas.length) {
+            container.innerHTML = '<p class="text-xs" style="color:var(--text-soft);">Sin collage aún. <a href="/agenda/collage.html" style="color:var(--primary);">Agregar →</a></p>';
+            return;
+        }
+        const recientes = [...entradas].reverse().slice(0, 9);
+        const items = recientes.map(e => {
+            const src = e.imageUrl || e.gifUrl;
+            if (src) {
+                return `<div class="collage-thumb"><img src="${src}" alt="" onerror="this.parentElement.style.background='#f3e8ff'; this.style.display='none'"></div>`;
+            }
+            if (e.quote) {
+                return `<div class="collage-thumb-text">"${e.quote.substring(0, 40)}${e.quote.length > 40 ? '…' : ''}"</div>`;
+            }
+            if (e.titulo) {
+                return `<div class="collage-thumb-text">${e.titulo.substring(0, 30)}</div>`;
+            }
+            return `<div class="collage-thumb-text" style="font-size:1.2rem;">✨</div>`;
+        }).join('');
+        container.innerHTML = `<div class="collage-grid">${items}</div>`;
+    } catch { container.innerHTML = '<p class="text-xs" style="color:var(--text-soft);">—</p>'; }
+}
+
+// ── Mood de hoy ───────────────────────────────────────────
+async function cargarMoodHoy() {
+    try {
+        const moods = await apiGet('/admin/moods');
+        const hoy = fechaHoy();
+        const moodHoy = moods.find(m => m.fecha === hoy);
+        if (moodHoy) {
+            const btn = document.querySelector(`.mood-btn[data-valor="${moodHoy.estadoAnimo}"]`);
+            if (btn) btn.classList.add('selected');
+            if (moodHoy.nota) {
+                const notaEl = document.getElementById('mood-nota');
+                notaEl.textContent = '"' + moodHoy.nota + '"';
+                notaEl.classList.remove('hidden');
+            }
+        }
+    } catch { /* silencioso */ }
+}
+
+async function registrarMood(btn) {
+    document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    try {
+        await apiPost('/admin/moods', { fecha: fechaHoy(), estadoAnimo: btn.dataset.valor });
+        const okEl = document.getElementById('mood-ok');
+        okEl.classList.remove('hidden');
+        setTimeout(() => okEl.classList.add('hidden'), 2000);
+    } catch (e) { alert('Error al guardar mood: ' + e.message); }
+}
+
+// ── Buscador ──────────────────────────────────────────────
+document.getElementById('buscar-input').addEventListener('keydown', e => { if (e.key === 'Enter') buscar(); });
+
+async function buscar() {
+    const q = document.getElementById('buscar-input').value.trim();
+    if (!q) return;
+    try {
+        const resultado = await apiGet('/admin/historico/search?q=' + encodeURIComponent(q));
+        const total = (resultado.tareas?.length||0) + (resultado.notas?.length||0) +
+                      (resultado.journal?.length||0) + (resultado.links?.length||0);
+        let html = `<p class="text-xs mb-3" style="color:var(--text-soft);">${total} resultado${total!==1?'s':''} para "<strong>${q}</strong>"</p>`;
+        if (resultado.tareas?.length) {
+            html += `<p class="text-xs font-semibold mb-1">📋 Tareas</p>`;
+            html += resultado.tareas.map(t => `<div class="py-1 text-xs border-b" style="border-color:#f3e8ff;">${t.titulo} <span style="color:var(--text-soft);">${formatearFecha(t.fecha)}</span></div>`).join('');
+        }
+        if (resultado.notas?.length) {
+            html += `<p class="text-xs font-semibold mt-2 mb-1">📝 Notas</p>`;
+            html += resultado.notas.map(n => `<div class="py-1 text-xs border-b" style="border-color:#f3e8ff;">${n.titulo||'(sin título)'} — ${n.contenido.substring(0,60)}…</div>`).join('');
+        }
+        if (resultado.journal?.length) {
+            html += `<p class="text-xs font-semibold mt-2 mb-1">📖 Journal</p>`;
+            html += resultado.journal.map(j => `<div class="py-1 text-xs border-b" style="border-color:#f3e8ff;">${j.titulo||'(sin título)'} <span style="color:var(--text-soft);">${formatearFecha(j.fechaReferencia)}</span></div>`).join('');
+        }
+        if (resultado.links?.length) {
+            html += `<p class="text-xs font-semibold mt-2 mb-1">🔗 Links</p>`;
+            html += resultado.links.map(l => `<div class="py-1 text-xs border-b" style="border-color:#f3e8ff;"><a href="${l.url}" target="_blank" style="color:var(--primary);">${l.titulo}</a></div>`).join('');
+        }
+        if (total === 0) html += '<p class="text-xs" style="color:var(--text-soft);">Sin resultados.</p>';
+        document.getElementById('modal-contenido').innerHTML = html;
+        document.getElementById('modal-buscar').classList.remove('hidden');
+    } catch (e) { alert('Error al buscar: ' + e.message); }
+}
+
+function cerrarModal() {
+    document.getElementById('modal-buscar').classList.add('hidden');
+}
+
+// ── Calendario ────────────────────────────────────────────
+function renderCalendario() {
+    const hoy = new Date();
+    const anio = hoy.getFullYear();
+    const mes  = hoy.getMonth();
+    const diasMes = new Date(anio, mes + 1, 0).getDate();
+    const primerDia = new Date(anio, mes, 1).getDay(); // 0=Dom
+    const primerLunes = primerDia === 0 ? 6 : primerDia - 1;
+
+    const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    document.getElementById('cal-mes-label').textContent = meses[mes] + ' ' + anio;
+
+    const headersEl = document.getElementById('cal-headers');
+    ['Lu','Ma','Mi','Ju','Vi','Sá','Do'].forEach(d => {
+        headersEl.innerHTML += `<span class="cal-header">${d}</span>`;
+    });
+
+    const daysEl = document.getElementById('cal-days');
+    for (let i = 0; i < primerLunes; i++) daysEl.innerHTML += `<span></span>`;
+    for (let d = 1; d <= diasMes; d++) {
+        const esHoy = d === hoy.getDate();
+        daysEl.innerHTML += `<span class="cal-day${esHoy?' today':''}">${d}</span>`;
+    }
+
+    // Marcar días con tareas (si ya cargaron)
+    apiGet('/admin/tareas').then(tareas => {
+        const diasConTareas = new Set(tareas.map(t => parseInt(t.fecha.split('-')[2])));
+        document.querySelectorAll('#cal-days .cal-day').forEach((el, i) => {
+            const dia = i + 1 - primerLunes + 1;
+            if (diasConTareas.has(dia)) el.classList.add('has-tasks');
+        });
+    }).catch(() => {});
+}
+</script>
+</body>
+</html>

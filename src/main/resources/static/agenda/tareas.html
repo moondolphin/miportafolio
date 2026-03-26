@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Mislun — Tareas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg:#f7f0ff; --primary:#8b5cf6; --text:#3b1f6a; --text-soft:#7c6a94; --border:#e9d5ff; }
+        body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; }
+        h1,h2,h3 { font-family:'Cormorant Garamond',serif; }
+        .card { background:white; border:1px solid var(--border); border-radius:1rem; padding:1.25rem; }
+        .input-field { border:1px solid var(--border); border-radius:.5rem; padding:.55rem .85rem; width:100%; font-size:.85rem; outline:none; background:#fdfbff; color:var(--text); }
+        .input-field:focus { border-color:var(--primary); }
+        .btn-primary { background:var(--primary); color:white; padding:.55rem 1.25rem; border-radius:.65rem; font-size:.85rem; cursor:pointer; }
+        .btn-danger  { background:#fee2e2; color:#b91c1c; padding:.4rem .85rem; border-radius:.65rem; font-size:.75rem; cursor:pointer; }
+        .btn-secondary { border:1px solid var(--border); color:var(--text-soft); padding:.4rem .85rem; border-radius:.65rem; font-size:.75rem; cursor:pointer; }
+        select.input-field { cursor:pointer; }
+        .badge { display:inline-block; padding:.1rem .5rem; border-radius:999px; font-size:.65rem; font-weight:500; }
+        .task-row { display:flex; align-items:center; gap:.75rem; padding:.75rem; border-radius:.75rem; margin-bottom:.4rem; border:1px solid var(--border); font-size:.82rem; }
+        .task-row:hover { background:#fdf8ff; }
+    </style>
+</head>
+<body>
+<header class="bg-white border-b sticky top-0 z-10" style="border-color:var(--border);">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <a href="/agenda/dashboard.html" class="text-sm" style="color:var(--text-soft);">← Dashboard</a>
+            <h1 class="text-xl font-bold" style="color:var(--primary);">📋 Tareas</h1>
+        </div>
+        <button onclick="logout()" class="text-xs px-3 py-1.5 rounded-lg" style="border:1px solid var(--border); color:var(--text-soft);">Salir</button>
+    </div>
+</header>
+
+<div class="max-w-5xl mx-auto px-4 py-6 grid md:grid-cols-3 gap-6">
+
+    <!-- Formulario -->
+    <div class="card md:col-span-1">
+        <h2 class="text-lg font-semibold mb-4" id="form-title">Nueva tarea</h2>
+        <form id="form-tarea" onsubmit="guardarTarea(event)" class="space-y-3">
+            <input type="hidden" id="tarea-id">
+            <div>
+                <label class="block text-xs mb-1" style="color:var(--text-soft);">Título *</label>
+                <input id="tarea-titulo" class="input-field" required>
+            </div>
+            <div>
+                <label class="block text-xs mb-1" style="color:var(--text-soft);">Descripción</label>
+                <textarea id="tarea-descripcion" class="input-field" rows="2"></textarea>
+            </div>
+            <div>
+                <label class="block text-xs mb-1" style="color:var(--text-soft);">Fecha *</label>
+                <input id="tarea-fecha" type="date" class="input-field" required>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-xs mb-1" style="color:var(--text-soft);">Hora inicio</label>
+                    <input id="tarea-hora-inicio" type="time" class="input-field">
+                </div>
+                <div>
+                    <label class="block text-xs mb-1" style="color:var(--text-soft);">Hora fin</label>
+                    <input id="tarea-hora-fin" type="time" class="input-field">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs mb-1" style="color:var(--text-soft);">Prioridad</label>
+                <select id="tarea-prioridad" class="input-field">
+                    <option value="MEDIA">Media</option>
+                    <option value="ALTA">Alta</option>
+                    <option value="BAJA">Baja</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs mb-1" style="color:var(--text-soft);">Estado</label>
+                <select id="tarea-estado" class="input-field">
+                    <option value="PENDIENTE">Pendiente</option>
+                    <option value="EN_PROGRESO">En progreso</option>
+                    <option value="COMPLETADA">Completada</option>
+                    <option value="CANCELADA">Cancelada</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs mb-1" style="color:var(--text-soft);">Etiquetas</label>
+                <div id="etiquetas-checks" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto"></div>
+            </div>
+            <p id="form-error" class="text-xs text-red-500 hidden"></p>
+            <div class="flex gap-2">
+                <button type="submit" class="btn-primary flex-1">Guardar</button>
+                <button type="button" onclick="resetForm()" class="btn-secondary">Limpiar</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Lista -->
+    <div class="md:col-span-2">
+        <!-- Filtros -->
+        <div class="card mb-4">
+            <div class="flex flex-wrap gap-2 items-center">
+                <input type="date" id="filtro-fecha" class="input-field" style="width:auto;" onchange="cargarTareas()">
+                <select id="filtro-prioridad" class="input-field" style="width:auto;" onchange="cargarTareas()">
+                    <option value="">Todas las prioridades</option>
+                    <option value="ALTA">Alta</option>
+                    <option value="MEDIA">Media</option>
+                    <option value="BAJA">Baja</option>
+                </select>
+                <select id="filtro-estado" class="input-field" style="width:auto;" onchange="cargarTareas()">
+                    <option value="">Todos los estados</option>
+                    <option value="PENDIENTE">Pendiente</option>
+                    <option value="EN_PROGRESO">En progreso</option>
+                    <option value="COMPLETADA">Completada</option>
+                    <option value="CANCELADA">Cancelada</option>
+                </select>
+                <button onclick="limpiarFiltros()" class="btn-secondary">Limpiar filtros</button>
+            </div>
+        </div>
+
+        <div id="lista-tareas">
+            <p class="text-sm" style="color:var(--text-soft);">Cargando...</p>
+        </div>
+    </div>
+</div>
+
+<script src="/agenda/js/api.js"></script>
+<script>
+requireAuth();
+cargarEtiquetasForm();
+cargarTareas();
+
+async function cargarEtiquetasForm() {
+    try {
+        const etiquetas = await apiGet('/admin/etiquetas');
+        const container = document.getElementById('etiquetas-checks');
+        container.innerHTML = etiquetas.map(e => `
+            <label class="flex items-center gap-1 text-xs cursor-pointer">
+                <input type="checkbox" value="${e.id}" class="etiqueta-check rounded">
+                <span class="badge" style="background:${e.color||'#ede9fe'}; color:#3b1f6a;">${e.nombre}</span>
+            </label>`).join('');
+    } catch {}
+}
+
+async function cargarTareas() {
+    const container = document.getElementById('lista-tareas');
+    const fecha     = document.getElementById('filtro-fecha').value;
+    const prioridad = document.getElementById('filtro-prioridad').value;
+    const estado    = document.getElementById('filtro-estado').value;
+    let params = [];
+    if (fecha)     params.push('fecha=' + fecha);
+    if (prioridad) params.push('prioridad=' + prioridad);
+    if (estado)    params.push('estado=' + estado);
+    const qs = params.length ? '?' + params.join('&') : '';
+    try {
+        const tareas = await apiGet('/admin/tareas' + qs);
+        if (!tareas.length) { container.innerHTML = '<p class="text-sm" style="color:var(--text-soft);">Sin tareas.</p>'; return; }
+        container.innerHTML = tareas.map(t => `
+            <div class="task-row">
+                <div class="flex-1">
+                    <p class="font-medium ${t.estado==='COMPLETADA'?'line-through opacity-50':''}">${t.titulo}</p>
+                    ${t.descripcion ? `<p class="text-xs mt-0.5" style="color:var(--text-soft);">${t.descripcion}</p>` : ''}
+                    <p class="text-xs mt-1" style="color:var(--text-soft);">
+                        ${formatearFecha(t.fecha)}
+                        ${t.horaInicio ? '· ' + t.horaInicio.substring(0,5) : ''}
+                        ${t.horaFin ? '– ' + t.horaFin.substring(0,5) : ''}
+                    </p>
+                    <div class="flex gap-1 mt-1 flex-wrap">
+                        <span class="badge ${PRIORIDAD_BADGE[t.prioridad]||''}">${t.prioridad}</span>
+                        <span class="badge ${ESTADO_BADGE[t.estado]||''}">${t.estado}</span>
+                        ${(t.etiquetas||[]).map(e=>`<span class="badge" style="background:${e.color||'#ede9fe'};color:#3b1f6a;">${e.nombre}</span>`).join('')}
+                    </div>
+                </div>
+                <div class="flex gap-1 flex-shrink-0">
+                    <button onclick="editarTarea(${JSON.stringify(t).replace(/"/g,'&quot;')})" class="btn-secondary">✏</button>
+                    <button onclick="eliminarTarea(${t.id})" class="btn-danger">✕</button>
+                </div>
+            </div>`).join('');
+    } catch (e) { container.innerHTML = `<p class="text-sm text-red-400">Error: ${e.message}</p>`; }
+}
+
+async function guardarTarea(e) {
+    e.preventDefault();
+    ocultarError('form-error');
+    const id = document.getElementById('tarea-id').value;
+    const etiquetaIds = [...document.querySelectorAll('.etiqueta-check:checked')].map(c => parseInt(c.value));
+    const body = {
+        titulo:      document.getElementById('tarea-titulo').value,
+        descripcion: document.getElementById('tarea-descripcion').value || null,
+        fecha:       document.getElementById('tarea-fecha').value,
+        horaInicio:  document.getElementById('tarea-hora-inicio').value || null,
+        horaFin:     document.getElementById('tarea-hora-fin').value || null,
+        prioridad:   document.getElementById('tarea-prioridad').value,
+        estado:      document.getElementById('tarea-estado').value,
+        etiquetaIds
+    };
+    try {
+        if (id) await apiPut('/admin/tareas/' + id, body);
+        else    await apiPost('/admin/tareas', body);
+        resetForm();
+        cargarTareas();
+    } catch (err) { mostrarError('form-error', err.message); }
+}
+
+function editarTarea(t) {
+    document.getElementById('tarea-id').value          = t.id;
+    document.getElementById('tarea-titulo').value      = t.titulo;
+    document.getElementById('tarea-descripcion').value = t.descripcion || '';
+    document.getElementById('tarea-fecha').value       = t.fecha;
+    document.getElementById('tarea-hora-inicio').value = t.horaInicio || '';
+    document.getElementById('tarea-hora-fin').value    = t.horaFin || '';
+    document.getElementById('tarea-prioridad').value   = t.prioridad;
+    document.getElementById('tarea-estado').value      = t.estado;
+    document.getElementById('form-title').textContent  = 'Editar tarea';
+    // Marcar etiquetas
+    const ids = (t.etiquetas || []).map(e => e.id);
+    document.querySelectorAll('.etiqueta-check').forEach(c => {
+        c.checked = ids.includes(parseInt(c.value));
+    });
+    window.scrollTo(0, 0);
+}
+
+async function eliminarTarea(id) {
+    if (!confirm('¿Eliminar esta tarea?')) return;
+    try { await apiDelete('/admin/tareas/' + id); cargarTareas(); }
+    catch (e) { alert('Error: ' + e.message); }
+}
+
+function resetForm() {
+    document.getElementById('form-tarea').reset();
+    document.getElementById('tarea-id').value = '';
+    document.getElementById('form-title').textContent = 'Nueva tarea';
+    document.querySelectorAll('.etiqueta-check').forEach(c => c.checked = false);
+    ocultarError('form-error');
+    document.getElementById('tarea-fecha').value = fechaHoy();
+}
+
+function limpiarFiltros() {
+    document.getElementById('filtro-fecha').value     = '';
+    document.getElementById('filtro-prioridad').value = '';
+    document.getElementById('filtro-estado').value    = '';
+    cargarTareas();
+}
+
+// Fecha de hoy por defecto
+document.getElementById('tarea-fecha').value = fechaHoy();
+</script>
+</body>
+</html>

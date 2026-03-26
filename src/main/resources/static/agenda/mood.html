@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Mislun — Mood</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        body { background:#f7f0ff; color:#3b1f6a; font-family:'Inter',sans-serif; }
+        h1,h2,h3 { font-family:'Cormorant Garamond',serif; }
+        .card { background:white; border:1px solid #e9d5ff; border-radius:1rem; padding:1.25rem; }
+        .input-field { border:1px solid #e9d5ff; border-radius:.5rem; padding:.55rem .85rem; width:100%; font-size:.85rem; outline:none; background:#fdfbff; color:#3b1f6a; }
+        .input-field:focus { border-color:#8b5cf6; }
+        .btn-primary { background:#8b5cf6; color:white; padding:.55rem 1.25rem; border-radius:.65rem; font-size:.85rem; cursor:pointer; }
+        .mood-btn { font-size:2rem; cursor:pointer; padding:.3rem .5rem; border-radius:.5rem; border:2px solid transparent; transition:all .15s; }
+        .mood-btn:hover { transform:scale(1.15); background:#f3f0ff; }
+        .mood-btn.selected { border-color:#8b5cf6; background:#ede9fe; }
+        .entry-row { display:flex; align-items:center; gap:.75rem; padding:.6rem .75rem; border-radius:.75rem; margin-bottom:.35rem; border:1px solid #e9d5ff; font-size:.82rem; }
+    </style>
+</head>
+<body>
+<header class="bg-white border-b sticky top-0 z-10" style="border-color:#e9d5ff;">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <a href="/agenda/dashboard.html" class="text-sm" style="color:#7c6a94;">← Dashboard</a>
+            <h1 class="text-xl font-bold" style="color:#8b5cf6;">🌸 Mood</h1>
+        </div>
+        <button onclick="logout()" class="text-xs px-3 py-1.5 rounded-lg" style="border:1px solid #e9d5ff; color:#7c6a94;">Salir</button>
+    </div>
+</header>
+<div class="max-w-4xl mx-auto px-4 py-6 grid md:grid-cols-2 gap-6">
+
+    <!-- Registrar -->
+    <div>
+        <div class="card mb-4">
+            <h2 class="text-lg font-semibold mb-4">¿Cómo estás hoy?</h2>
+            <div>
+                <label class="block text-xs mb-2" style="color:#7c6a94;">Fecha</label>
+                <input id="mood-fecha" type="date" class="input-field mb-3">
+                <label class="block text-xs mb-2" style="color:#7c6a94;">Estado de ánimo</label>
+                <div class="flex gap-2 mb-3">
+                    <button class="mood-btn" data-valor="MUY_BIEN" title="Muy bien">✨</button>
+                    <button class="mood-btn" data-valor="BIEN"     title="Bien">🌸</button>
+                    <button class="mood-btn" data-valor="NEUTRO"   title="Neutro">🌙</button>
+                    <button class="mood-btn" data-valor="MAL"      title="Mal">🌧</button>
+                    <button class="mood-btn" data-valor="MUY_MAL"  title="Muy mal">🌑</button>
+                </div>
+                <label class="block text-xs mb-1" style="color:#7c6a94;">Nota (opcional)</label>
+                <input id="mood-nota" type="text" class="input-field mb-3" placeholder="una frase, lo que sea...">
+                <p id="mood-error" class="text-xs text-red-500 hidden mb-2"></p>
+                <p id="mood-ok" class="text-xs text-green-600 hidden mb-2">Mood guardado ✓</p>
+                <button onclick="registrarMood()" class="btn-primary w-full">Guardar mood</button>
+            </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="card">
+            <h2 class="text-lg font-semibold mb-3">Estadísticas</h2>
+            <div id="stats-mood" class="space-y-2">
+                <p class="text-xs" style="color:#7c6a94;">Cargando...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historial -->
+    <div>
+        <div class="card">
+            <h2 class="text-lg font-semibold mb-3">Historial</h2>
+            <div id="lista-moods" class="max-h-[600px] overflow-y-auto">
+                <p class="text-xs" style="color:#7c6a94;">Cargando...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/agenda/js/api.js"></script>
+<script>
+requireAuth();
+document.getElementById('mood-fecha').value = fechaHoy();
+cargarMoods();
+
+let valorSeleccionado = null;
+document.querySelectorAll('.mood-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        valorSeleccionado = btn.dataset.valor;
+    });
+});
+
+async function cargarMoods() {
+    const [moods, stats] = await Promise.all([
+        apiGet('/admin/moods').catch(() => []),
+        apiGet('/admin/moods/stats').catch(() => ({}))
+    ]);
+    renderLista(moods);
+    renderStats(stats, moods.length);
+}
+
+function renderLista(moods) {
+    const container = document.getElementById('lista-moods');
+    if (!moods.length) { container.innerHTML = '<p class="text-xs" style="color:#7c6a94;">Sin registros aún.</p>'; return; }
+    const ordenados = [...moods].sort((a,b) => b.fecha.localeCompare(a.fecha));
+    container.innerHTML = ordenados.map(m => `
+        <div class="entry-row">
+            <span class="text-2xl">${ANIMO_EMOJI[m.estadoAnimo] || '?'}</span>
+            <div>
+                <p class="font-medium">${formatearFecha(m.fecha)}</p>
+                ${m.nota ? `<p class="text-xs italic" style="color:#7c6a94;">"${m.nota}"</p>` : ''}
+            </div>
+            <span class="ml-auto text-xs" style="color:#a089b8;">${m.estadoAnimo.replace('_',' ')}</span>
+        </div>`).join('');
+}
+
+function renderStats(stats, total) {
+    const container = document.getElementById('stats-mood');
+    if (!total) { container.innerHTML = '<p class="text-xs" style="color:#7c6a94;">Sin datos.</p>'; return; }
+    const orden = ['MUY_BIEN','BIEN','NEUTRO','MAL','MUY_MAL'];
+    container.innerHTML = orden.map(k => {
+        const count = stats[k] || 0;
+        const pct = total ? Math.round((count / total) * 100) : 0;
+        return `<div class="flex items-center gap-2 text-xs">
+            <span class="text-lg w-6">${ANIMO_EMOJI[k]}</span>
+            <span class="w-16" style="color:#7c6a94;">${k.replace('_',' ')}</span>
+            <div class="flex-1 bg-purple-50 rounded-full h-2">
+                <div class="h-2 rounded-full" style="width:${pct}%; background:#8b5cf6;"></div>
+            </div>
+            <span class="w-8 text-right" style="color:#7c6a94;">${count}</span>
+        </div>`;
+    }).join('');
+}
+
+async function registrarMood() {
+    ocultarError('mood-error');
+    if (!valorSeleccionado) { mostrarError('mood-error', 'Seleccioná un estado de ánimo'); return; }
+    try {
+        await apiPost('/admin/moods', {
+            fecha:       document.getElementById('mood-fecha').value,
+            estadoAnimo: valorSeleccionado,
+            nota:        document.getElementById('mood-nota').value || null
+        });
+        const ok = document.getElementById('mood-ok');
+        ok.classList.remove('hidden');
+        setTimeout(() => ok.classList.add('hidden'), 2000);
+        cargarMoods();
+    } catch (e) { mostrarError('mood-error', e.message); }
+}
+</script>
+</body>
+</html>

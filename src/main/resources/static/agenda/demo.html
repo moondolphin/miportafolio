@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Mislun — Demo pública</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #f7f0ff; color: #3b1f6a; font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Cormorant Garamond', serif; }
+        .card { background: white; border: 1px solid #e9d5ff; border-radius: 1rem; padding: 1.25rem; }
+    </style>
+</head>
+<body class="min-h-screen p-6">
+
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-10">
+            <h1 class="text-4xl font-bold mb-2" style="color:#8b5cf6;">Agenda Mislun</h1>
+            <p class="text-sm" style="color:#7c6a94;">módulo privado de agenda personal — vista pública</p>
+        </div>
+
+        <!-- Info box -->
+        <div class="card mb-8 text-center" style="background:#ede9fe;">
+            <p class="text-sm" style="color:#5b3e9b;">
+                Este es un módulo privado de uso personal. El acceso completo requiere autenticación y aprobación.<br>
+                <span class="font-medium">¿Querés acceder? Registrate y esperá habilitación.</span>
+            </p>
+            <a href="/agenda/login.html" class="inline-block mt-4 px-6 py-2 rounded-xl text-sm font-medium text-white" style="background:#8b5cf6;">
+                Iniciar sesión / Registrarse
+            </a>
+        </div>
+
+        <!-- Demo visual (datos ficticios, sin acceso real) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+
+            <div class="card" style="background:#fce7f3;">
+                <h3 class="text-lg font-semibold mb-3">Tareas de hoy</h3>
+                <ul class="space-y-2 text-sm" style="color:#7c6a94;">
+                    <li class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-purple-400 inline-block"></span>
+                        Revisar bocetos del proyecto
+                    </li>
+                    <li class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-pink-300 inline-block"></span>
+                        Estudiar hexagonal architecture
+                    </li>
+                    <li class="flex items-center gap-2 line-through opacity-50">
+                        <span class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span>
+                        Responder emails
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card" style="background:#ede9fe;">
+                <h3 class="text-lg font-semibold mb-3">Notas sueltas</h3>
+                <div class="space-y-2 text-sm" style="color:#7c6a94;">
+                    <p class="italic">"recordar llamar al banco antes del martes"</p>
+                    <p class="italic">"la luz a las 6pm sobre el parque — fotografiar"</p>
+                </div>
+            </div>
+
+            <div class="card" style="background:#e0f2fe;">
+                <h3 class="text-lg font-semibold mb-3">Mood del día</h3>
+                <div class="text-center py-4">
+                    <span class="text-5xl">🌸</span>
+                    <p class="mt-2 text-sm font-medium" style="color:#5b3e9b;">Bien</p>
+                    <p class="text-xs mt-1" style="color:#7c6a94;">"mañana tranquila, mucho café"</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div class="card" style="background:#fef9c3;">
+                <h3 class="text-lg font-semibold mb-3">Links guardados</h3>
+                <ul class="space-y-2 text-sm" style="color:#7c6a94;">
+                    <li>📎 Documentación Spring Boot 3.3</li>
+                    <li>📎 Paletas de color pastel — Coolors</li>
+                    <li>📎 Ensayo sobre el tiempo libre — artículo</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3 class="text-lg font-semibold mb-3">Journal</h3>
+                <p class="text-sm italic" style="color:#7c6a94;">
+                    "Hoy fue de esos días donde nada fue urgente y sin embargo todo fue importante.
+                    Escribí tres páginas, tomé mucho té y estuve en silencio bastante tiempo..."
+                </p>
+                <p class="text-xs mt-2" style="color:#a089b8;">— entrada privada</p>
+            </div>
+        </div>
+
+        <!-- Collage sample -->
+        <div class="card text-center" style="background: linear-gradient(135deg, #fce7f3, #ede9fe, #e0f2fe);">
+            <h3 class="text-lg font-semibold mb-2">Collage del día</h3>
+            <p class="text-3xl mb-2">🌿 ✨ 🎞</p>
+            <p class="text-sm italic" style="color:#5b3e9b;">
+                "La creatividad es inteligencia divirtiéndose."
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-8">
+            <a href="/Home.html" class="text-xs underline" style="color:#a089b8;">← Volver al portafolio</a>
+        </div>
+    </div>
+
+    <script src="/agenda/js/api.js"></script>
+    <script>
+        // Cargar descripción real desde la API pública (si el servidor responde)
+        fetch('/api/v1/public/agenda-mislun/demo')
+            .then(r => r.json())
+            .catch(() => null);
+    </script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Mislun — Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        body { background:#f7f0ff; color:#3b1f6a; font-family:'Inter',sans-serif; }
+        h1,h2 { font-family:'Cormorant Garamond',serif; }
+        .card { background:white; border:1px solid #e9d5ff; border-radius:1rem; padding:1.25rem; }
+        .input-field { border:1px solid #e9d5ff; border-radius:.5rem; padding:.55rem .85rem; width:100%; font-size:.85rem; outline:none; background:#fdfbff; color:#3b1f6a; }
+        .input-field:focus { border-color:#8b5cf6; }
+        .btn-ok      { background:#d1fae5; color:#065f46; padding:.4rem .85rem; border-radius:.5rem; font-size:.75rem; cursor:pointer; }
+        .btn-danger  { background:#fee2e2; color:#b91c1c; padding:.4rem .85rem; border-radius:.5rem; font-size:.75rem; cursor:pointer; }
+        .btn-primary { background:#8b5cf6; color:white; padding:.55rem 1.25rem; border-radius:.65rem; font-size:.85rem; cursor:pointer; }
+        .user-row { display:flex; align-items:center; gap:.75rem; padding:.65rem .9rem; border:1px solid #e9d5ff; border-radius:.75rem; margin-bottom:.4rem; font-size:.82rem; }
+    </style>
+</head>
+<body>
+<header class="bg-white border-b sticky top-0 z-10" style="border-color:#e9d5ff;">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <a href="/agenda/dashboard.html" class="text-sm" style="color:#7c6a94;">← Dashboard</a>
+            <h1 class="text-xl font-bold" style="color:#8b5cf6;">⚙️ Administración</h1>
+        </div>
+        <button onclick="logout()" class="text-xs px-3 py-1.5 rounded-lg" style="border:1px solid #e9d5ff; color:#7c6a94;">Salir</button>
+    </div>
+</header>
+<div class="max-w-4xl mx-auto px-4 py-6 space-y-6">
+
+    <!-- Usuarios pendientes -->
+    <div class="card">
+        <h2 class="text-lg font-semibold mb-3">Usuarios pendientes de aprobación</h2>
+        <div id="lista-pendientes">
+            <p class="text-sm" style="color:#7c6a94;">Cargando...</p>
+        </div>
+    </div>
+
+    <!-- Todos los usuarios -->
+    <div class="card">
+        <h2 class="text-lg font-semibold mb-3">Todos los usuarios</h2>
+        <div id="lista-todos">
+            <p class="text-sm" style="color:#7c6a94;">Cargando...</p>
+        </div>
+    </div>
+
+    <!-- Cambiar contraseña propia -->
+    <div class="card">
+        <h2 class="text-lg font-semibold mb-3">Cambiar mi contraseña</h2>
+        <form onsubmit="cambiarPassword(event)" class="space-y-3 max-w-sm">
+            <div>
+                <label class="block text-xs mb-1" style="color:#7c6a94;">Contraseña actual</label>
+                <input id="pw-actual" type="password" class="input-field" required>
+            </div>
+            <div>
+                <label class="block text-xs mb-1" style="color:#7c6a94;">Nueva contraseña</label>
+                <input id="pw-nueva" type="password" class="input-field" required>
+            </div>
+            <p id="pw-error" class="text-xs text-red-500 hidden"></p>
+            <p id="pw-ok" class="text-xs text-green-600 hidden">Contraseña actualizada ✓</p>
+            <button type="submit" class="btn-primary">Actualizar contraseña</button>
+        </form>
+    </div>
+</div>
+
+<script src="/agenda/js/api.js"></script>
+<script>
+requireAdmin();
+cargarDatos();
+
+async function cargarDatos() {
+    const [pendientes, todos] = await Promise.all([
+        apiGet('/admin/users/pending').catch(() => []),
+        apiGet('/admin/users').catch(() => [])
+    ]);
+    renderPendientes(pendientes);
+    renderTodos(todos);
+}
+
+function renderPendientes(pendientes) {
+    const container = document.getElementById('lista-pendientes');
+    if (!pendientes.length) {
+        container.innerHTML = '<p class="text-sm" style="color:#7c6a94;">Sin usuarios pendientes.</p>';
+        return;
+    }
+    container.innerHTML = pendientes.map(u => `
+        <div class="user-row">
+            <div class="flex-1">
+                <p class="font-medium">${u.username}</p>
+                <p class="text-xs" style="color:#7c6a94;">${u.email}</p>
+            </div>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">pendiente</span>
+            <button onclick="aprobar(${u.id})" class="btn-ok">Aprobar</button>
+            <button onclick="rechazar(${u.id})" class="btn-danger">Rechazar</button>
+        </div>`).join('');
+}
+
+function renderTodos(todos) {
+    const container = document.getElementById('lista-todos');
+    if (!todos.length) { container.innerHTML = '<p class="text-sm" style="color:#7c6a94;">—</p>'; return; }
+    container.innerHTML = todos.map(u => `
+        <div class="user-row">
+            <div class="flex-1">
+                <p class="font-medium">${u.username}</p>
+                <p class="text-xs" style="color:#7c6a94;">${u.email} · ${u.role}</p>
+            </div>
+            <span class="text-xs px-2 py-0.5 rounded-full ${u.approved?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700'}">
+                ${u.approved ? 'aprobado' : 'pendiente'}
+            </span>
+            <span class="text-xs px-2 py-0.5 rounded-full ${u.active?'bg-blue-100 text-blue-700':'bg-red-100 text-red-600'}">
+                ${u.active ? 'activo' : 'inactivo'}
+            </span>
+        </div>`).join('');
+}
+
+async function aprobar(id) {
+    try { await apiPut('/admin/users/' + id + '/approve', {}); cargarDatos(); }
+    catch (e) { alert('Error: ' + e.message); }
+}
+
+async function rechazar(id) {
+    if (!confirm('¿Rechazar este usuario?')) return;
+    try { await apiPut('/admin/users/' + id + '/reject', {}); cargarDatos(); }
+    catch (e) { alert('Error: ' + e.message); }
+}
+
+async function cambiarPassword(e) {
+    e.preventDefault();
+    ocultarError('pw-error');
+    document.getElementById('pw-ok').classList.add('hidden');
+    try {
+        await apiPut('/auth/password', {
+            passwordActual: document.getElementById('pw-actual').value,
+            passwordNueva:  document.getElementById('pw-nueva').value
+        });
+        document.getElementById('pw-ok').classList.remove('hidden');
+        document.getElementById('pw-actual').value = '';
+        document.getElementById('pw-nueva').value  = '';
+    } catch (err) { mostrarError('pw-error', err.message); }
+}
+</script>
+</body>
+</html>

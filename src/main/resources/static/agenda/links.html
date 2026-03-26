@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Mislun — Links</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg:#fffbeb; --primary:#8b5cf6; --text:#3b1f6a; --text-soft:#7c6a94; --border:#fde68a; }
+        body { background:#f7f0ff; color:var(--text); font-family:'Inter',sans-serif; }
+        h1,h2,h3 { font-family:'Cormorant Garamond',serif; }
+        .card { background:white; border:1px solid #e9d5ff; border-radius:1rem; padding:1.25rem; }
+        .input-field { border:1px solid #e9d5ff; border-radius:.5rem; padding:.55rem .85rem; width:100%; font-size:.85rem; outline:none; background:#fdfbff; color:var(--text); }
+        .input-field:focus { border-color:var(--primary); }
+        .btn-primary { background:var(--primary); color:white; padding:.55rem 1.25rem; border-radius:.65rem; font-size:.85rem; cursor:pointer; }
+        .btn-danger  { background:#fee2e2; color:#b91c1c; padding:.4rem .85rem; border-radius:.65rem; font-size:.75rem; cursor:pointer; }
+        .btn-secondary { border:1px solid #e9d5ff; color:var(--text-soft); padding:.4rem .85rem; border-radius:.65rem; font-size:.75rem; cursor:pointer; }
+        .badge { display:inline-block; padding:.1rem .5rem; border-radius:999px; font-size:.65rem; font-weight:500; }
+        .link-card { background:#fffdf0; border:1px solid #fde68a; border-radius:.85rem; padding:.9rem; margin-bottom:.5rem; }
+    </style>
+</head>
+<body>
+<header class="bg-white border-b sticky top-0 z-10" style="border-color:#e9d5ff;">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <a href="/agenda/dashboard.html" class="text-sm" style="color:var(--text-soft);">← Dashboard</a>
+            <h1 class="text-xl font-bold" style="color:var(--primary);">🔗 Links</h1>
+        </div>
+        <button onclick="logout()" class="text-xs px-3 py-1.5 rounded-lg" style="border:1px solid #e9d5ff; color:var(--text-soft);">Salir</button>
+    </div>
+</header>
+<div class="max-w-5xl mx-auto px-4 py-6 grid md:grid-cols-3 gap-6">
+    <div class="card md:col-span-1">
+        <h2 class="text-lg font-semibold mb-4" id="form-title">Nuevo link</h2>
+        <form id="form-link" onsubmit="guardarLink(event)" class="space-y-3">
+            <input type="hidden" id="link-id">
+            <div>
+                <label class="block text-xs mb-1" style="color:var(--text-soft);">Título *</label>
+                <input id="link-titulo" class="input-field" required>
+            </div>
+            <div>
+                <label class="block text-xs mb-1" style="color:var(--text-soft);">URL *</label>
+                <input id="link-url" type="url" class="input-field" placeholder="https://..." required>
+            </div>
+            <div>
+                <label class="block text-xs mb-1" style="color:var(--text-soft);">Descripción</label>
+                <textarea id="link-descripcion" class="input-field" rows="2"></textarea>
+            </div>
+            <div>
+                <label class="block text-xs mb-1" style="color:var(--text-soft);">Fecha de referencia</label>
+                <input id="link-fecha" type="date" class="input-field">
+            </div>
+            <div>
+                <label class="block text-xs mb-1" style="color:var(--text-soft);">Etiquetas</label>
+                <div id="etiquetas-checks" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto"></div>
+            </div>
+            <p id="form-error" class="text-xs text-red-500 hidden"></p>
+            <div class="flex gap-2">
+                <button type="submit" class="btn-primary flex-1">Guardar</button>
+                <button type="button" onclick="resetForm()" class="btn-secondary">Limpiar</button>
+            </div>
+        </form>
+    </div>
+    <div class="md:col-span-2" id="lista-links">
+        <p class="text-sm" style="color:var(--text-soft);">Cargando...</p>
+    </div>
+</div>
+<script src="/agenda/js/api.js"></script>
+<script>
+requireAuth();
+cargarEtiquetasForm();
+cargarLinks();
+
+async function cargarEtiquetasForm() {
+    try {
+        const etiquetas = await apiGet('/admin/etiquetas');
+        document.getElementById('etiquetas-checks').innerHTML = etiquetas.map(e => `
+            <label class="flex items-center gap-1 text-xs cursor-pointer">
+                <input type="checkbox" value="${e.id}" class="etiqueta-check">
+                <span class="badge" style="background:${e.color||'#ede9fe'}; color:#3b1f6a;">${e.nombre}</span>
+            </label>`).join('');
+    } catch {}
+}
+
+async function cargarLinks() {
+    const container = document.getElementById('lista-links');
+    try {
+        const links = await apiGet('/admin/links');
+        if (!links.length) { container.innerHTML = '<p class="text-sm" style="color:var(--text-soft);">Sin links aún.</p>'; return; }
+        container.innerHTML = links.reverse().map(l => `
+            <div class="link-card">
+                <div class="flex justify-between items-start">
+                    <div class="flex-1">
+                        <a href="${l.url}" target="_blank" class="font-medium text-sm hover:underline" style="color:var(--primary);">📎 ${l.titulo}</a>
+                        <p class="text-xs mt-0.5 truncate" style="color:var(--text-soft);">${l.url}</p>
+                        ${l.descripcion ? `<p class="text-xs mt-1" style="color:#4b3a6b;">${l.descripcion}</p>` : ''}
+                        ${l.fechaReferencia ? `<p class="text-xs mt-0.5" style="color:var(--text-soft);">${formatearFecha(l.fechaReferencia)}</p>` : ''}
+                        <div class="flex gap-1 mt-1 flex-wrap">
+                            ${(l.etiquetas||[]).map(e=>`<span class="badge" style="background:${e.color||'#ede9fe'};color:#3b1f6a;">${e.nombre}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="flex gap-1 ml-2">
+                        <button onclick='editarLink(${JSON.stringify(l).replace(/'/g,"\\'")})'  class="btn-secondary">✏</button>
+                        <button onclick="eliminarLink(${l.id})" class="btn-danger">✕</button>
+                    </div>
+                </div>
+            </div>`).join('');
+    } catch (e) { container.innerHTML = `<p class="text-sm text-red-400">Error: ${e.message}</p>`; }
+}
+
+async function guardarLink(e) {
+    e.preventDefault();
+    ocultarError('form-error');
+    const id = document.getElementById('link-id').value;
+    const etiquetaIds = [...document.querySelectorAll('.etiqueta-check:checked')].map(c => parseInt(c.value));
+    const body = {
+        titulo:          document.getElementById('link-titulo').value,
+        url:             document.getElementById('link-url').value,
+        descripcion:     document.getElementById('link-descripcion').value || null,
+        fechaReferencia: document.getElementById('link-fecha').value || null,
+        etiquetaIds
+    };
+    try {
+        if (id) await apiPut('/admin/links/' + id, body);
+        else    await apiPost('/admin/links', body);
+        resetForm();
+        cargarLinks();
+    } catch (err) { mostrarError('form-error', err.message); }
+}
+
+function editarLink(l) {
+    document.getElementById('link-id').value          = l.id;
+    document.getElementById('link-titulo').value      = l.titulo;
+    document.getElementById('link-url').value         = l.url;
+    document.getElementById('link-descripcion').value = l.descripcion || '';
+    document.getElementById('link-fecha').value       = l.fechaReferencia || '';
+    document.getElementById('form-title').textContent = 'Editar link';
+    const ids = (l.etiquetas||[]).map(e=>e.id);
+    document.querySelectorAll('.etiqueta-check').forEach(c=>{ c.checked=ids.includes(parseInt(c.value)); });
+    window.scrollTo(0,0);
+}
+
+async function eliminarLink(id) {
+    if (!confirm('¿Eliminar este link?')) return;
+    try { await apiDelete('/admin/links/' + id); cargarLinks(); }
+    catch (e) { alert('Error: ' + e.message); }
+}
+
+function resetForm() {
+    document.getElementById('form-link').reset();
+    document.getElementById('link-id').value = '';
+    document.getElementById('form-title').textContent = 'Nuevo link';
+    document.querySelectorAll('.etiqueta-check').forEach(c => c.checked = false);
+    ocultarError('form-error');
+}
+</script>
+</body>
+</html>

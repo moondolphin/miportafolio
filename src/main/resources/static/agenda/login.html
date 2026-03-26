@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Mislun — Acceso</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f7f0ff;
+            --card: #ffffff;
+            --primary: #8b5cf6;
+            --primary-light: #ede9fe;
+            --rose: #fce7f3;
+            --text: #3b1f6a;
+            --text-soft: #7c6a94;
+            --border: #e9d5ff;
+        }
+        body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
+        h1, h2 { font-family: 'Cormorant Garamond', serif; }
+        .tab-active { border-bottom: 2px solid var(--primary); color: var(--primary); }
+        .tab-inactive { border-bottom: 2px solid transparent; color: var(--text-soft); }
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            transition: opacity 0.2s;
+        }
+        .btn-primary:hover { opacity: 0.85; }
+        .input-field {
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.6rem 0.9rem;
+            width: 100%;
+            outline: none;
+            font-size: 0.9rem;
+            background: #fdfbff;
+            color: var(--text);
+            transition: border-color 0.2s;
+        }
+        .input-field:focus { border-color: var(--primary); }
+        .bg-stars {
+            background-image: radial-gradient(circle at 20% 30%, rgba(139,92,246,0.08) 0%, transparent 50%),
+                              radial-gradient(circle at 80% 70%, rgba(244,194,194,0.12) 0%, transparent 50%);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center bg-stars p-4">
+
+    <div class="w-full max-w-md">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold mb-1" style="color: var(--primary);">Agenda Mislun</h1>
+            <p class="text-sm" style="color: var(--text-soft);">espacio personal &amp; privado</p>
+        </div>
+
+        <!-- Card -->
+        <div class="bg-white rounded-2xl shadow-lg p-8" style="border: 1px solid var(--border);">
+
+            <!-- Tabs -->
+            <div class="flex gap-6 mb-6">
+                <button id="tab-login" class="pb-2 text-sm font-medium tab-active transition-all" onclick="mostrarTab('login')">Iniciar sesión</button>
+                <button id="tab-registro" class="pb-2 text-sm font-medium tab-inactive transition-all" onclick="mostrarTab('registro')">Registrarse</button>
+            </div>
+
+            <!-- Formulario login -->
+            <form id="form-login" onsubmit="handleLogin(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium mb-1" style="color: var(--text-soft);">Usuario o email</label>
+                        <input id="login-usuario" type="text" class="input-field" placeholder="tu usuario o email" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1" style="color: var(--text-soft);">Contraseña</label>
+                        <input id="login-password" type="password" class="input-field" placeholder="••••••••" required>
+                    </div>
+                    <p id="login-error" class="text-xs text-red-500 hidden"></p>
+                    <button type="submit" class="btn-primary w-full py-2.5 rounded-xl text-sm font-medium mt-2">
+                        Entrar
+                    </button>
+                </div>
+            </form>
+
+            <!-- Formulario registro -->
+            <form id="form-registro" class="hidden" onsubmit="handleRegistro(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium mb-1" style="color: var(--text-soft);">Usuario</label>
+                        <input id="reg-username" type="text" class="input-field" placeholder="elige un nombre de usuario" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1" style="color: var(--text-soft);">Email</label>
+                        <input id="reg-email" type="email" class="input-field" placeholder="tu@email.com" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium mb-1" style="color: var(--text-soft);">Contraseña</label>
+                        <input id="reg-password" type="password" class="input-field" placeholder="••••••••" required>
+                    </div>
+                    <p id="registro-error" class="text-xs text-red-500 hidden"></p>
+                    <p id="registro-ok" class="text-xs text-green-600 hidden">Registro exitoso. Tu cuenta queda pendiente de aprobación.</p>
+                    <button type="submit" class="btn-primary w-full py-2.5 rounded-xl text-sm font-medium mt-2">
+                        Registrarse
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Demo pública -->
+        <p class="text-center mt-6 text-xs" style="color: var(--text-soft);">
+            ¿Solo querés ver cómo funciona?
+            <a href="/agenda/demo.html" class="underline" style="color: var(--primary);">Vista pública</a>
+        </p>
+
+        <!-- Volver al portafolio -->
+        <p class="text-center mt-3 text-xs" style="color: var(--text-soft);">
+            <a href="/Home.html" class="underline">← Volver al portafolio</a>
+        </p>
+    </div>
+
+    <script src="/agenda/js/api.js"></script>
+    <script>
+        // Si ya hay token válido, redirigir directo al dashboard
+        redirectIfAuthenticated();
+
+        function mostrarTab(tab) {
+            const formLogin    = document.getElementById('form-login');
+            const formRegistro = document.getElementById('form-registro');
+            const tabLogin     = document.getElementById('tab-login');
+            const tabRegistro  = document.getElementById('tab-registro');
+
+            if (tab === 'login') {
+                formLogin.classList.remove('hidden');
+                formRegistro.classList.add('hidden');
+                tabLogin.className    = 'pb-2 text-sm font-medium tab-active transition-all';
+                tabRegistro.className = 'pb-2 text-sm font-medium tab-inactive transition-all';
+            } else {
+                formLogin.classList.add('hidden');
+                formRegistro.classList.remove('hidden');
+                tabLogin.className    = 'pb-2 text-sm font-medium tab-inactive transition-all';
+                tabRegistro.className = 'pb-2 text-sm font-medium tab-active transition-all';
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            ocultarError('login-error');
+            const usernameOrEmail = document.getElementById('login-usuario').value.trim();
+            const password        = document.getElementById('login-password').value;
+            try {
+                const data = await apiPost('/auth/login', { usernameOrEmail, password });
+                setToken(data.token);
+                window.location.href = '/agenda/dashboard.html';
+            } catch (err) {
+                mostrarError('login-error', err.message || 'Error al iniciar sesión');
+            }
+        }
+
+        async function handleRegistro(e) {
+            e.preventDefault();
+            ocultarError('registro-error');
+            document.getElementById('registro-ok').classList.add('hidden');
+            const username = document.getElementById('reg-username').value.trim();
+            const email    = document.getElementById('reg-email').value.trim();
+            const password = document.getElementById('reg-password').value;
+            try {
+                await apiPost('/users/register', { username, email, password });
+                document.getElementById('registro-ok').classList.remove('hidden');
+                document.getElementById('form-registro').reset();
+            } catch (err) {
+                mostrarError('registro-error', err.message || 'Error al registrarse');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Mislun — Recordatorios</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg:#f0fdf4; --primary:#8b5cf6; --text:#3b1f6a; --text-soft:#7c6a94; }
+        body { background:#f7f0ff; color:var(--text); font-family:'Inter',sans-serif; }
+        h1,h2,h3 { font-family:'Cormorant Garamond',serif; }
+        .card { background:white; border:1px solid #e9d5ff; border-radius:1rem; padding:1.25rem; }
+        .input-field { border:1px solid #e9d5ff; border-radius:.5rem; padding:.55rem .85rem; width:100%; font-size:.85rem; outline:none; background:#fdfbff; color:var(--text); }
+        .input-field:focus { border-color:var(--primary); }
+        .btn-primary { background:var(--primary); color:white; padding:.55rem 1.25rem; border-radius:.65rem; font-size:.85rem; cursor:pointer; }
+        .btn-danger  { background:#fee2e2; color:#b91c1c; padding:.4rem .85rem; border-radius:.65rem; font-size:.75rem; cursor:pointer; }
+        .btn-secondary { border:1px solid #e9d5ff; color:var(--text-soft); padding:.4rem .85rem; border-radius:.65rem; font-size:.75rem; cursor:pointer; }
+        .badge { display:inline-block; padding:.1rem .5rem; border-radius:999px; font-size:.65rem; font-weight:500; }
+        .rec-card { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:.85rem; padding:.9rem; margin-bottom:.5rem; }
+    </style>
+</head>
+<body>
+<header class="bg-white border-b sticky top-0 z-10" style="border-color:#e9d5ff;">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <a href="/agenda/dashboard.html" class="text-sm" style="color:var(--text-soft);">← Dashboard</a>
+            <h1 class="text-xl font-bold" style="color:var(--primary);">🔔 Recordatorios</h1>
+        </div>
+        <button onclick="logout()" class="text-xs px-3 py-1.5 rounded-lg" style="border:1px solid #e9d5ff; color:var(--text-soft);">Salir</button>
+    </div>
+</header>
+<div class="max-w-5xl mx-auto px-4 py-6 grid md:grid-cols-3 gap-6">
+    <div class="card md:col-span-1">
+        <h2 class="text-lg font-semibold mb-4" id="form-title">Nuevo recordatorio</h2>
+        <form id="form-rec" onsubmit="guardar(event)" class="space-y-3">
+            <input type="hidden" id="rec-id">
+            <div>
+                <label class="block text-xs mb-1" style="color:var(--text-soft);">Título *</label>
+                <input id="rec-titulo" class="input-field" required>
+            </div>
+            <div>
+                <label class="block text-xs mb-1" style="color:var(--text-soft);">Descripción</label>
+                <textarea id="rec-descripcion" class="input-field" rows="2"></textarea>
+            </div>
+            <div>
+                <label class="block text-xs mb-1" style="color:var(--text-soft);">Fecha *</label>
+                <input id="rec-fecha" type="date" class="input-field" required>
+            </div>
+            <div>
+                <label class="block text-xs mb-1" style="color:var(--text-soft);">Hora</label>
+                <input id="rec-hora" type="time" class="input-field">
+            </div>
+            <div>
+                <label class="block text-xs mb-1" style="color:var(--text-soft);">Estado</label>
+                <select id="rec-estado" class="input-field">
+                    <option value="PENDIENTE">Pendiente</option>
+                    <option value="COMPLETADO">Completado</option>
+                    <option value="CANCELADO">Cancelado</option>
+                </select>
+            </div>
+            <p id="form-error" class="text-xs text-red-500 hidden"></p>
+            <div class="flex gap-2">
+                <button type="submit" class="btn-primary flex-1">Guardar</button>
+                <button type="button" onclick="resetForm()" class="btn-secondary">Limpiar</button>
+            </div>
+        </form>
+    </div>
+    <div class="md:col-span-2" id="lista-rec">
+        <p class="text-sm" style="color:var(--text-soft);">Cargando...</p>
+    </div>
+</div>
+<script src="/agenda/js/api.js"></script>
+<script>
+requireAuth();
+cargarRecordatorios();
+document.getElementById('rec-fecha').value = fechaHoy();
+
+async function cargarRecordatorios() {
+    const container = document.getElementById('lista-rec');
+    try {
+        const todos = await apiGet('/admin/recordatorios');
+        if (!todos.length) { container.innerHTML = '<p class="text-sm" style="color:var(--text-soft);">Sin recordatorios.</p>'; return; }
+        const ordenados = [...todos].sort((a,b) => a.fecha.localeCompare(b.fecha));
+        container.innerHTML = ordenados.map(r => `
+            <div class="rec-card">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="font-medium text-sm ${r.estado==='COMPLETADO'?'line-through opacity-50':''}">🔔 ${r.titulo}</p>
+                        <p class="text-xs" style="color:var(--text-soft);">${formatearFecha(r.fecha)}${r.hora ? ' · ' + r.hora.substring(0,5) : ''}</p>
+                        ${r.descripcion ? `<p class="text-xs mt-1" style="color:#4b3a6b;">${r.descripcion}</p>` : ''}
+                        <span class="badge mt-1 ${r.estado==='PENDIENTE'?'bg-purple-100 text-purple-700':r.estado==='COMPLETADO'?'bg-green-100 text-green-700':'bg-gray-100 text-gray-500'}">${r.estado}</span>
+                    </div>
+                    <div class="flex gap-1">
+                        <button onclick='editar(${JSON.stringify(r).replace(/'/g,"\\'")})'  class="btn-secondary">✏</button>
+                        <button onclick="eliminar(${r.id})" class="btn-danger">✕</button>
+                    </div>
+                </div>
+            </div>`).join('');
+    } catch (e) { container.innerHTML = `<p class="text-sm text-red-400">Error: ${e.message}</p>`; }
+}
+
+async function guardar(e) {
+    e.preventDefault();
+    ocultarError('form-error');
+    const id = document.getElementById('rec-id').value;
+    const body = {
+        titulo:      document.getElementById('rec-titulo').value,
+        descripcion: document.getElementById('rec-descripcion').value || null,
+        fecha:       document.getElementById('rec-fecha').value,
+        hora:        document.getElementById('rec-hora').value || null,
+        estado:      document.getElementById('rec-estado').value,
+        etiquetaIds: []
+    };
+    try {
+        if (id) await apiPut('/admin/recordatorios/' + id, body);
+        else    await apiPost('/admin/recordatorios', body);
+        resetForm();
+        cargarRecordatorios();
+    } catch (err) { mostrarError('form-error', err.message); }
+}
+
+function editar(r) {
+    document.getElementById('rec-id').value          = r.id;
+    document.getElementById('rec-titulo').value      = r.titulo;
+    document.getElementById('rec-descripcion').value = r.descripcion || '';
+    document.getElementById('rec-fecha').value       = r.fecha;
+    document.getElementById('rec-hora').value        = r.hora || '';
+    document.getElementById('rec-estado').value      = r.estado;
+    document.getElementById('form-title').textContent = 'Editar recordatorio';
+    window.scrollTo(0,0);
+}
+
+async function eliminar(id) {
+    if (!confirm('¿Eliminar este recordatorio?')) return;
+    try { await apiDelete('/admin/recordatorios/' + id); cargarRecordatorios(); }
+    catch (e) { alert('Error: ' + e.message); }
+}
+
+function resetForm() {
+    document.getElementById('form-rec').reset();
+    document.getElementById('rec-id').value = '';
+    document.getElementById('form-title').textContent = 'Nuevo recordatorio';
+    document.getElementById('rec-fecha').value = fechaHoy();
+    ocultarError('form-error');
+}
+</script>
+</body>
+</html>

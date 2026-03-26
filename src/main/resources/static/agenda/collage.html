@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Mislun — Collage</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        body { background:#f7f0ff; color:#3b1f6a; font-family:'Inter',sans-serif; }
+        h1,h2,h3 { font-family:'Cormorant Garamond',serif; }
+        .card { background:white; border:1px solid #e9d5ff; border-radius:1rem; padding:1.25rem; }
+        .input-field { border:1px solid #e9d5ff; border-radius:.5rem; padding:.55rem .85rem; width:100%; font-size:.85rem; outline:none; background:#fdfbff; color:#3b1f6a; }
+        .input-field:focus { border-color:#8b5cf6; }
+        .btn-primary { background:#8b5cf6; color:white; padding:.55rem 1.25rem; border-radius:.65rem; font-size:.85rem; cursor:pointer; }
+        .btn-danger  { background:#fee2e2; color:#b91c1c; padding:.4rem .85rem; border-radius:.65rem; font-size:.75rem; cursor:pointer; }
+        .btn-secondary { border:1px solid #e9d5ff; color:#7c6a94; padding:.4rem .85rem; border-radius:.65rem; font-size:.75rem; cursor:pointer; }
+        .collage-card {
+            border-radius:1rem;
+            overflow:hidden;
+            border:1px solid #e9d5ff;
+            background:linear-gradient(135deg,#fce7f3,#ede9fe,#e0f2fe);
+            margin-bottom:.75rem;
+            padding:1rem;
+        }
+    </style>
+</head>
+<body>
+<header class="bg-white border-b sticky top-0 z-10" style="border-color:#e9d5ff;">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <a href="/agenda/dashboard.html" class="text-sm" style="color:#7c6a94;">← Dashboard</a>
+            <h1 class="text-xl font-bold" style="color:#8b5cf6;">🎞 Collage</h1>
+        </div>
+        <button onclick="logout()" class="text-xs px-3 py-1.5 rounded-lg" style="border:1px solid #e9d5ff; color:#7c6a94;">Salir</button>
+    </div>
+</header>
+<div class="max-w-5xl mx-auto px-4 py-6 grid md:grid-cols-3 gap-6">
+    <div class="card md:col-span-1">
+        <h2 class="text-lg font-semibold mb-4" id="form-title">Nuevo collage</h2>
+        <form id="form-collage" onsubmit="guardar(event)" class="space-y-3">
+            <input type="hidden" id="collage-id">
+            <div>
+                <label class="block text-xs mb-1" style="color:#7c6a94;">Título (opcional)</label>
+                <input id="collage-titulo" class="input-field">
+            </div>
+            <div>
+                <label class="block text-xs mb-1" style="color:#7c6a94;">URL de imagen</label>
+                <input id="collage-image" type="url" class="input-field" placeholder="https://...">
+            </div>
+            <div>
+                <label class="block text-xs mb-1" style="color:#7c6a94;">URL de GIF</label>
+                <input id="collage-gif" type="url" class="input-field" placeholder="https://...">
+            </div>
+            <div>
+                <label class="block text-xs mb-1" style="color:#7c6a94;">Frase / Quote</label>
+                <textarea id="collage-quote" class="input-field" rows="3"></textarea>
+            </div>
+            <div>
+                <label class="block text-xs mb-1" style="color:#7c6a94;">Fecha de referencia</label>
+                <input id="collage-fecha" type="date" class="input-field">
+            </div>
+            <p id="form-error" class="text-xs text-red-500 hidden"></p>
+            <div class="flex gap-2">
+                <button type="submit" class="btn-primary flex-1">Guardar</button>
+                <button type="button" onclick="resetForm()" class="btn-secondary">Limpiar</button>
+            </div>
+        </form>
+    </div>
+    <div class="md:col-span-2" id="lista-collage">
+        <p class="text-sm" style="color:#7c6a94;">Cargando...</p>
+    </div>
+</div>
+<script src="/agenda/js/api.js"></script>
+<script>
+requireAuth();
+cargarCollage();
+
+async function cargarCollage() {
+    const container = document.getElementById('lista-collage');
+    try {
+        const entradas = await apiGet('/admin/collage');
+        if (!entradas.length) { container.innerHTML = '<p class="text-sm" style="color:#7c6a94;">Sin collages aún.</p>'; return; }
+        container.innerHTML = entradas.reverse().map(c => `
+            <div class="collage-card">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        ${c.titulo ? `<p class="font-medium text-sm">${c.titulo}</p>` : ''}
+                        ${c.fechaReferencia ? `<p class="text-xs" style="color:#7c6a94;">${formatearFecha(c.fechaReferencia)}</p>` : ''}
+                    </div>
+                    <div class="flex gap-1">
+                        <button onclick='editar(${JSON.stringify(c).replace(/'/g,"\\'")})'  class="btn-secondary">✏</button>
+                        <button onclick="eliminar(${c.id})" class="btn-danger">✕</button>
+                    </div>
+                </div>
+                ${c.imageUrl ? `<img src="${c.imageUrl}" alt="" class="w-full max-h-48 object-cover rounded-lg mb-2" onerror="this.style.display='none'">` : ''}
+                ${c.gifUrl ? `<img src="${c.gifUrl}" alt="" class="w-full max-h-36 object-cover rounded-lg mb-2" onerror="this.style.display='none'">` : ''}
+                ${c.quote ? `<p class="text-sm italic text-center" style="color:#5b3e9b;">"${c.quote}"</p>` : ''}
+            </div>`).join('');
+    } catch (e) { container.innerHTML = `<p class="text-sm text-red-400">Error: ${e.message}</p>`; }
+}
+
+async function guardar(e) {
+    e.preventDefault();
+    ocultarError('form-error');
+    const id = document.getElementById('collage-id').value;
+    const body = {
+        titulo:          document.getElementById('collage-titulo').value || null,
+        imageUrl:        document.getElementById('collage-image').value || null,
+        gifUrl:          document.getElementById('collage-gif').value || null,
+        quote:           document.getElementById('collage-quote').value || null,
+        fechaReferencia: document.getElementById('collage-fecha').value || null
+    };
+    try {
+        if (id) await apiPut('/admin/collage/' + id, body);
+        else    await apiPost('/admin/collage', body);
+        resetForm();
+        cargarCollage();
+    } catch (err) { mostrarError('form-error', err.message); }
+}
+
+function editar(c) {
+    document.getElementById('collage-id').value     = c.id;
+    document.getElementById('collage-titulo').value = c.titulo || '';
+    document.getElementById('collage-image').value  = c.imageUrl || '';
+    document.getElementById('collage-gif').value    = c.gifUrl || '';
+    document.getElementById('collage-quote').value  = c.quote || '';
+    document.getElementById('collage-fecha').value  = c.fechaReferencia || '';
+    document.getElementById('form-title').textContent = 'Editar collage';
+    window.scrollTo(0,0);
+}
+
+async function eliminar(id) {
+    if (!confirm('¿Eliminar este collage?')) return;
+    try { await apiDelete('/admin/collage/' + id); cargarCollage(); }
+    catch (e) { alert('Error: ' + e.message); }
+}
+
+function resetForm() {
+    document.getElementById('form-collage').reset();
+    document.getElementById('collage-id').value = '';
+    document.getElementById('form-title').textContent = 'Nuevo collage';
+    ocultarError('form-error');
+}
+</script>
+</body>
+</html>

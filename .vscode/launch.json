@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "miportafolio (local)",
+            "request": "launch",
+            "mainClass": "moondolphin.miportafolio.bootstrap.MainApplication",
+            "projectName": "miportafolio",
+            "vmArgs": "-Dspring.profiles.active=local"
+        }
+    ]
+}
