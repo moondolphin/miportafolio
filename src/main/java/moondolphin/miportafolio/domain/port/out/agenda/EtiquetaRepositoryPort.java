@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface EtiquetaRepositoryPort {
-    List<Etiqueta> findAll();
-    Optional<Etiqueta> findById(Long id);
-    List<Etiqueta> findByIds(List<Long> ids);
+    List<Etiqueta> findAllByCreatedBy(Long userId);
+    Optional<Etiqueta> findByIdAndCreatedBy(Long id, Long userId);
+    List<Etiqueta> findByIdsAndCreatedBy(List<Long> ids, Long userId);
     Etiqueta save(Etiqueta etiqueta);
     void deleteById(Long id);
 }

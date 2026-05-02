@@ -25,13 +25,14 @@ public class RecordatorioRepositoryAdapter implements RecordatorioRepositoryPort
     }
 
     @Override
-    public List<Recordatorio> findAll() {
-        return jpaRepository.findAll().stream().map(RecordatorioJpaEntity::toDomain).collect(Collectors.toList());
+    public List<Recordatorio> findAllByCreatedBy(Long userId) {
+        return jpaRepository.findAllByCreatedByOrderByFechaAsc(userId).stream()
+                .map(RecordatorioJpaEntity::toDomain).collect(Collectors.toList());
     }
 
     @Override
-    public Optional<Recordatorio> findById(Long id) {
-        return jpaRepository.findById(id).map(RecordatorioJpaEntity::toDomain);
+    public Optional<Recordatorio> findByIdAndCreatedBy(Long id, Long userId) {
+        return jpaRepository.findByIdAndCreatedBy(id, userId).map(RecordatorioJpaEntity::toDomain);
     }
 
     @Override
@@ -48,7 +49,7 @@ public class RecordatorioRepositoryAdapter implements RecordatorioRepositoryPort
         entity.setUpdatedAt(recordatorio.getUpdatedAt());
 
         if (etiquetaIds != null && !etiquetaIds.isEmpty()) {
-            List<EtiquetaJpaEntity> etiquetas = etiquetaJpaRepository.findByIdIn(etiquetaIds);
+            List<EtiquetaJpaEntity> etiquetas = etiquetaJpaRepository.findByIdInAndCreatedBy(etiquetaIds, recordatorio.getCreatedBy());
             entity.setEtiquetas(etiquetas);
         }
 

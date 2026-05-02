@@ -20,13 +20,14 @@ public class CollageRepositoryAdapter implements CollageRepositoryPort {
     }
 
     @Override
-    public List<CollageEntry> findAll() {
-        return jpaRepository.findAll().stream().map(CollageJpaEntity::toDomain).collect(Collectors.toList());
+    public List<CollageEntry> findAllByCreatedBy(Long userId) {
+        return jpaRepository.findAllByCreatedByOrderByCreatedAtDesc(userId).stream()
+                .map(CollageJpaEntity::toDomain).collect(Collectors.toList());
     }
 
     @Override
-    public Optional<CollageEntry> findById(Long id) {
-        return jpaRepository.findById(id).map(CollageJpaEntity::toDomain);
+    public Optional<CollageEntry> findByIdAndCreatedBy(Long id, Long userId) {
+        return jpaRepository.findByIdAndCreatedBy(id, userId).map(CollageJpaEntity::toDomain);
     }
 
     @Override

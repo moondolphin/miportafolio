@@ -22,13 +22,14 @@ public class CollageHandler {
     }
 
     @GetMapping
-    public List<CollageEntry> listar() {
-        return collageService.obtenerTodos();
+    public List<CollageEntry> listar(@AuthenticationPrincipal AgendaUserDetails userDetails) {
+        return collageService.obtenerCollageDelUsuario(userDetails.getUserId());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CollageEntry> obtener(@PathVariable Long id) {
-        return collageService.obtenerPorId(id)
+    public ResponseEntity<CollageEntry> obtener(@PathVariable Long id,
+                                                @AuthenticationPrincipal AgendaUserDetails userDetails) {
+        return collageService.obtenerCollagePropioPorId(id, userDetails.getUserId())
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> new NotFoundException("Collage no encontrado"));
     }
@@ -42,8 +43,7 @@ public class CollageHandler {
         entry.setGifUrl(request.getGifUrl());
         entry.setQuote(request.getQuote());
         entry.setFechaReferencia(request.getFechaReferencia());
-        entry.setCreatedBy(userDetails.getUserId());
-        return collageService.crear(entry);
+        return collageService.crearCollageParaUsuario(entry, userDetails.getUserId());
     }
 
     @PutMapping("/{id}")
@@ -56,13 +56,13 @@ public class CollageHandler {
         entry.setGifUrl(request.getGifUrl());
         entry.setQuote(request.getQuote());
         entry.setFechaReferencia(request.getFechaReferencia());
-        entry.setCreatedBy(userDetails.getUserId());
-        return collageService.actualizar(id, entry);
+        return collageService.actualizarCollagePropio(id, entry, userDetails.getUserId());
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        collageService.eliminar(id);
+    public ResponseEntity<Void> eliminar(@PathVariable Long id,
+                                         @AuthenticationPrincipal AgendaUserDetails userDetails) {
+        collageService.eliminarCollagePropio(id, userDetails.getUserId());
         return ResponseEntity.noContent().build();
     }
 }

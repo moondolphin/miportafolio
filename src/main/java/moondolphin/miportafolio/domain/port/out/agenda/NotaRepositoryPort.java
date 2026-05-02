@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface NotaRepositoryPort {
-    List<NotaLibre> findAll();
-    Optional<NotaLibre> findById(Long id);
+    List<NotaLibre> findAllByCreatedBy(Long userId);
+    Optional<NotaLibre> findByIdAndCreatedBy(Long id, Long userId);
     NotaLibre save(NotaLibre nota, List<Long> etiquetaIds);
     void deleteById(Long id);
-    List<NotaLibre> searchByTexto(String texto);
+    List<NotaLibre> searchByTextoAndCreatedBy(String texto, Long userId);
 }

@@ -22,13 +22,14 @@ public class RecordatorioHandler {
     }
 
     @GetMapping
-    public List<Recordatorio> listar() {
-        return recordatorioService.obtenerTodos();
+    public List<Recordatorio> listar(@AuthenticationPrincipal AgendaUserDetails userDetails) {
+        return recordatorioService.obtenerRecordatoriosDelUsuario(userDetails.getUserId());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Recordatorio> obtener(@PathVariable Long id) {
-        return recordatorioService.obtenerPorId(id)
+    public ResponseEntity<Recordatorio> obtener(@PathVariable Long id,
+                                                @AuthenticationPrincipal AgendaUserDetails userDetails) {
+        return recordatorioService.obtenerRecordatorioPropioPorId(id, userDetails.getUserId())
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> new NotFoundException("Recordatorio no encontrado"));
     }
@@ -42,8 +43,7 @@ public class RecordatorioHandler {
         r.setFecha(request.getFecha());
         r.setHora(request.getHora());
         r.setEstado(request.getEstado());
-        r.setCreatedBy(userDetails.getUserId());
-        return recordatorioService.crear(r, request.getEtiquetaIds());
+        return recordatorioService.crearRecordatorioParaUsuario(r, request.getEtiquetaIds(), userDetails.getUserId());
     }
 
     @PutMapping("/{id}")
@@ -56,13 +56,13 @@ public class RecordatorioHandler {
         r.setFecha(request.getFecha());
         r.setHora(request.getHora());
         r.setEstado(request.getEstado());
-        r.setCreatedBy(userDetails.getUserId());
-        return recordatorioService.actualizar(id, r, request.getEtiquetaIds());
+        return recordatorioService.actualizarRecordatorioPropio(id, r, request.getEtiquetaIds(), userDetails.getUserId());
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        recordatorioService.eliminar(id);
+    public ResponseEntity<Void> eliminar(@PathVariable Long id,
+                                         @AuthenticationPrincipal AgendaUserDetails userDetails) {
+        recordatorioService.eliminarRecordatorioPropio(id, userDetails.getUserId());
         return ResponseEntity.noContent().build();
     }
 }

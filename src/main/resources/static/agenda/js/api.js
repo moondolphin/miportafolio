@@ -55,7 +55,12 @@ function getUsername() {
 
 function requireAuth() {
     if (!isTokenValido()) {
-        window.location.href = '/agenda/login.html';
+        mostrarPopupYRedirigir(
+            'Sesión requerida',
+            'Necesitás iniciar sesión para acceder a esta página.',
+            '/agenda/login.html',
+            true
+        );
         return false;
     }
     return true;
@@ -64,7 +69,12 @@ function requireAuth() {
 function requireAdmin() {
     if (!requireAuth()) return false;
     if (getRole() !== 'ADMIN') {
-        window.location.href = '/agenda/pendiente.html';
+        mostrarPopupYRedirigir(
+            'Acceso restringido',
+            'Esta sección es exclusiva del administrador.',
+            '/agenda/dashboard.html',
+            false
+        );
         return false;
     }
     return true;
@@ -84,6 +94,61 @@ function logout() {
     window.location.href = '/agenda/login.html';
 }
 
+// ── Popup modal bloqueante ─────────────────────────────────
+// Muestra un popup con un botón "Aceptar". Hasta que el usuario no
+// confirme, no se ejecuta el redirect. Si borrarToken=true, además
+// limpia la sesión antes de redirigir (caso 401: sesión inválida).
+
+function mostrarPopupYRedirigir(titulo, mensaje, urlDestino, borrarToken) {
+    if (document.getElementById('agenda-popup-overlay')) return; // ya hay uno
+
+    const overlay = document.createElement('div');
+    overlay.id = 'agenda-popup-overlay';
+    overlay.style.cssText = `
+        position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 99999; font-family: 'Inter', sans-serif;
+    `;
+
+    const popup = document.createElement('div');
+    popup.style.cssText = `
+        background: #fff; border-radius: 16px; padding: 28px;
+        max-width: 380px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        text-align: center; border: 1px solid #e9d5ff;
+    `;
+
+    const tituloEl = document.createElement('h2');
+    tituloEl.textContent = titulo;
+    tituloEl.style.cssText = `
+        font-family: 'Cormorant Garamond', serif; color: #3b1f6a;
+        font-size: 22px; margin: 0 0 12px 0;
+    `;
+
+    const mensajeEl = document.createElement('p');
+    mensajeEl.textContent = mensaje;
+    mensajeEl.style.cssText = `color: #5a4a7a; font-size: 14px; margin: 0 0 20px 0; line-height: 1.5;`;
+
+    const botonEl = document.createElement('button');
+    botonEl.textContent = 'Aceptar';
+    botonEl.style.cssText = `
+        background: #7c3aed; color: white; border: none;
+        padding: 10px 28px; border-radius: 10px; font-size: 14px;
+        font-weight: 500; cursor: pointer;
+    `;
+    botonEl.onclick = () => {
+        if (borrarToken) removeToken();
+        document.body.removeChild(overlay);
+        if (urlDestino) window.location.href = urlDestino;
+    };
+
+    popup.appendChild(tituloEl);
+    popup.appendChild(mensajeEl);
+    popup.appendChild(botonEl);
+    overlay.appendChild(popup);
+    document.body.appendChild(overlay);
+    setTimeout(() => botonEl.focus(), 50);
+}
+
 // ── Fetch wrappers ─────────────────────────────────────────
 
 function headers() {
@@ -94,10 +159,25 @@ function headers() {
 }
 
 async function handleResponse(response) {
-    if (response.status === 401 || response.status === 403) {
-        removeToken();
-        window.location.href = '/agenda/login.html';
-        throw new Error('No autorizado');
+    if (response.status === 401) {
+        // Sesión inválida o expirada → borrar token y mandar al login
+        mostrarPopupYRedirigir(
+            'Sesión expirada',
+            'Tu sesión expiró. Por favor iniciá sesión nuevamente.',
+            '/agenda/login.html',
+            true
+        );
+        throw new Error('Sesión expirada');
+    }
+    if (response.status === 403) {
+        // Permiso insuficiente → mantener sesión, avisar al usuario
+        mostrarPopupYRedirigir(
+            'Sin permisos',
+            'No tenés permiso para realizar esta acción.',
+            null,
+            false
+        );
+        throw new Error('Sin permisos');
     }
     if (!response.ok) {
         const text = await response.text();
@@ -141,12 +221,7 @@ async function apiDelete(path) {
         method: 'DELETE',
         headers: headers()
     });
-    if (response.status === 401 || response.status === 403) {
-        removeToken();
-        window.location.href = '/agenda/login.html';
-        throw new Error('No autorizado');
-    }
-    return null;
+    return handleResponse(response);
 }
 
 // ── Utilidades de UI ───────────────────────────────────────

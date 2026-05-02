@@ -23,42 +23,46 @@ public class TareaService implements TareaServicePort {
     }
 
     @Override
-    public List<Tarea> obtenerTodas() {
-        return tareaRepository.findAll();
+    public List<Tarea> obtenerTareasDelUsuario(Long userId) {
+        return tareaRepository.findAllByCreatedBy(userId);
     }
 
     @Override
-    public List<Tarea> buscar(LocalDate fecha, Prioridad prioridad, EstadoTarea estado, String tag) {
-        if (fecha != null) return tareaRepository.findByFecha(fecha);
-        if (prioridad != null) return tareaRepository.findByPrioridad(prioridad);
-        if (estado != null) return tareaRepository.findByEstado(estado);
-        if (tag != null) return tareaRepository.findByEtiquetaNombre(tag);
-        return tareaRepository.findAll();
+    public List<Tarea> buscarTareasDelUsuario(Long userId, LocalDate fecha, Prioridad prioridad, EstadoTarea estado, String tag) {
+        if (fecha != null) return tareaRepository.findByFechaAndCreatedBy(fecha, userId);
+        if (prioridad != null) return tareaRepository.findByPrioridadAndCreatedBy(prioridad, userId);
+        if (estado != null) return tareaRepository.findByEstadoAndCreatedBy(estado, userId);
+        if (tag != null) return tareaRepository.findByEtiquetaNombreAndCreatedBy(tag, userId);
+        return tareaRepository.findAllByCreatedBy(userId);
     }
 
     @Override
-    public Optional<Tarea> obtenerPorId(Long id) {
-        return tareaRepository.findById(id);
+    public Optional<Tarea> obtenerTareaPropiaPorId(Long id, Long userId) {
+        return tareaRepository.findByIdAndCreatedBy(id, userId);
     }
 
     @Override
-    public Tarea crear(Tarea tarea, List<Long> etiquetaIds) {
+    public Tarea crearTareaParaUsuario(Tarea tarea, List<Long> etiquetaIds, Long userId) {
+        tarea.setCreatedBy(userId);
         tarea.setCreatedAt(LocalDateTime.now());
         tarea.setUpdatedAt(LocalDateTime.now());
         return tareaRepository.save(tarea, etiquetaIds);
     }
 
     @Override
-    public Tarea actualizar(Long id, Tarea tarea, List<Long> etiquetaIds) {
-        tareaRepository.findById(id)
+    public Tarea actualizarTareaPropia(Long id, Tarea tarea, List<Long> etiquetaIds, Long userId) {
+        tareaRepository.findByIdAndCreatedBy(id, userId)
                 .orElseThrow(() -> new NotFoundException("Tarea no encontrada"));
         tarea.setId(id);
+        tarea.setCreatedBy(userId);
         tarea.setUpdatedAt(LocalDateTime.now());
         return tareaRepository.save(tarea, etiquetaIds);
     }
 
     @Override
-    public void eliminar(Long id) {
+    public void eliminarTareaPropia(Long id, Long userId) {
+        tareaRepository.findByIdAndCreatedBy(id, userId)
+                .orElseThrow(() -> new NotFoundException("Tarea no encontrada"));
         tareaRepository.deleteById(id);
     }
 }

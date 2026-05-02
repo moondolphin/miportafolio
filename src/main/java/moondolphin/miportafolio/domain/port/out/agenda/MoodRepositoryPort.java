@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface MoodRepositoryPort {
-    List<MoodEntry> findAll();
+    List<MoodEntry> findAllByCreatedBy(Long userId);
     MoodEntry save(MoodEntry entry);
-    Map<EstadoAnimo, Long> countByEstadoAnimo();
+    Map<EstadoAnimo, Long> countByEstadoAnimoAndCreatedBy(Long userId);
 }

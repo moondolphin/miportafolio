@@ -8,13 +8,13 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TareaRepositoryPort {
-    List<Tarea> findAll();
-    List<Tarea> findByFecha(LocalDate fecha);
-    List<Tarea> findByPrioridad(Prioridad prioridad);
-    List<Tarea> findByEstado(EstadoTarea estado);
-    List<Tarea> findByEtiquetaNombre(String nombre);
-    Optional<Tarea> findById(Long id);
+    List<Tarea> findAllByCreatedBy(Long userId);
+    List<Tarea> findByFechaAndCreatedBy(LocalDate fecha, Long userId);
+    List<Tarea> findByPrioridadAndCreatedBy(Prioridad prioridad, Long userId);
+    List<Tarea> findByEstadoAndCreatedBy(EstadoTarea estado, Long userId);
+    List<Tarea> findByEtiquetaNombreAndCreatedBy(String nombre, Long userId);
+    Optional<Tarea> findByIdAndCreatedBy(Long id, Long userId);
     Tarea save(Tarea tarea, List<Long> etiquetaIds);
     void deleteById(Long id);
-    List<Tarea> searchByTexto(String texto);
+    List<Tarea> searchByTextoAndCreatedBy(String texto, Long userId);
 }

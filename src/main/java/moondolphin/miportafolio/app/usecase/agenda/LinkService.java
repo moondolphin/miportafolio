@@ -20,33 +20,37 @@ public class LinkService implements LinkServicePort {
     }
 
     @Override
-    public List<LinkItem> obtenerTodos() {
-        return linkRepository.findAll();
+    public List<LinkItem> obtenerLinksDelUsuario(Long userId) {
+        return linkRepository.findAllByCreatedBy(userId);
     }
 
     @Override
-    public Optional<LinkItem> obtenerPorId(Long id) {
-        return linkRepository.findById(id);
+    public Optional<LinkItem> obtenerLinkPropioPorId(Long id, Long userId) {
+        return linkRepository.findByIdAndCreatedBy(id, userId);
     }
 
     @Override
-    public LinkItem crear(LinkItem link, List<Long> etiquetaIds) {
+    public LinkItem crearLinkParaUsuario(LinkItem link, List<Long> etiquetaIds, Long userId) {
+        link.setCreatedBy(userId);
         link.setCreatedAt(LocalDateTime.now());
         link.setUpdatedAt(LocalDateTime.now());
         return linkRepository.save(link, etiquetaIds);
     }
 
     @Override
-    public LinkItem actualizar(Long id, LinkItem link, List<Long> etiquetaIds) {
-        linkRepository.findById(id)
+    public LinkItem actualizarLinkPropio(Long id, LinkItem link, List<Long> etiquetaIds, Long userId) {
+        linkRepository.findByIdAndCreatedBy(id, userId)
                 .orElseThrow(() -> new NotFoundException("Link no encontrado"));
         link.setId(id);
+        link.setCreatedBy(userId);
         link.setUpdatedAt(LocalDateTime.now());
         return linkRepository.save(link, etiquetaIds);
     }
 
     @Override
-    public void eliminar(Long id) {
+    public void eliminarLinkPropio(Long id, Long userId) {
+        linkRepository.findByIdAndCreatedBy(id, userId)
+                .orElseThrow(() -> new NotFoundException("Link no encontrado"));
         linkRepository.deleteById(id);
     }
 }

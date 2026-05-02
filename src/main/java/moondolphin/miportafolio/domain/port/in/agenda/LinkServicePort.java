@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface LinkServicePort {
-    List<LinkItem> obtenerTodos();
-    Optional<LinkItem> obtenerPorId(Long id);
-    LinkItem crear(LinkItem link, List<Long> etiquetaIds);
-    LinkItem actualizar(Long id, LinkItem link, List<Long> etiquetaIds);
-    void eliminar(Long id);
+    List<LinkItem> obtenerLinksDelUsuario(Long userId);
+    Optional<LinkItem> obtenerLinkPropioPorId(Long id, Long userId);
+    LinkItem crearLinkParaUsuario(LinkItem link, List<Long> etiquetaIds, Long userId);
+    LinkItem actualizarLinkPropio(Long id, LinkItem link, List<Long> etiquetaIds, Long userId);
+    void eliminarLinkPropio(Long id, Long userId);
 }

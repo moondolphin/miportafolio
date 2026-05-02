@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface NotaServicePort {
-    List<NotaLibre> obtenerTodas();
-    Optional<NotaLibre> obtenerPorId(Long id);
-    NotaLibre crear(NotaLibre nota, List<Long> etiquetaIds);
-    NotaLibre actualizar(Long id, NotaLibre nota, List<Long> etiquetaIds);
-    void eliminar(Long id);
+    List<NotaLibre> obtenerNotasDelUsuario(Long userId);
+    Optional<NotaLibre> obtenerNotaPropiaPorId(Long id, Long userId);
+    NotaLibre crearNotaParaUsuario(NotaLibre nota, List<Long> etiquetaIds, Long userId);
+    NotaLibre actualizarNotaPropia(Long id, NotaLibre nota, List<Long> etiquetaIds, Long userId);
+    void eliminarNotaPropia(Long id, Long userId);
 }

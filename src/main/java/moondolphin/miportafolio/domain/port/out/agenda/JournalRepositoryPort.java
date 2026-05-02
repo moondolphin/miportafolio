@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface JournalRepositoryPort {
-    List<JournalEntry> findAll();
-    Optional<JournalEntry> findById(Long id);
+    List<JournalEntry> findAllByCreatedBy(Long userId);
+    Optional<JournalEntry> findByIdAndCreatedBy(Long id, Long userId);
     JournalEntry save(JournalEntry entry, List<Long> etiquetaIds);
     void deleteById(Long id);
-    List<JournalEntry> searchByTexto(String texto);
+    List<JournalEntry> searchByTextoAndCreatedBy(String texto, Long userId);
 }

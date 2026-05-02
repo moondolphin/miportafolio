@@ -6,8 +6,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface JournalJpaRepository extends JpaRepository<JournalJpaEntity, Long> {
-    @Query("SELECT j FROM JournalJpaEntity j WHERE LOWER(j.titulo) LIKE LOWER(CONCAT('%',:texto,'%')) OR LOWER(j.contenido) LIKE LOWER(CONCAT('%',:texto,'%'))")
-    List<JournalJpaEntity> searchByTexto(@Param("texto") String texto);
+
+    List<JournalJpaEntity> findAllByCreatedByOrderByFechaReferenciaDesc(Long createdBy);
+
+    Optional<JournalJpaEntity> findByIdAndCreatedBy(Long id, Long createdBy);
+
+    @Query("SELECT j FROM JournalJpaEntity j WHERE j.createdBy = :createdBy AND (LOWER(j.titulo) LIKE LOWER(CONCAT('%',:texto,'%')) OR LOWER(j.contenido) LIKE LOWER(CONCAT('%',:texto,'%')))")
+    List<JournalJpaEntity> searchByTextoAndCreatedBy(@Param("texto") String texto, @Param("createdBy") Long createdBy);
 }

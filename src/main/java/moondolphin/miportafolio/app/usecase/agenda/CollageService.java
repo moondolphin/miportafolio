@@ -20,33 +20,37 @@ public class CollageService implements CollageServicePort {
     }
 
     @Override
-    public List<CollageEntry> obtenerTodos() {
-        return collageRepository.findAll();
+    public List<CollageEntry> obtenerCollageDelUsuario(Long userId) {
+        return collageRepository.findAllByCreatedBy(userId);
     }
 
     @Override
-    public Optional<CollageEntry> obtenerPorId(Long id) {
-        return collageRepository.findById(id);
+    public Optional<CollageEntry> obtenerCollagePropioPorId(Long id, Long userId) {
+        return collageRepository.findByIdAndCreatedBy(id, userId);
     }
 
     @Override
-    public CollageEntry crear(CollageEntry entry) {
+    public CollageEntry crearCollageParaUsuario(CollageEntry entry, Long userId) {
+        entry.setCreatedBy(userId);
         entry.setCreatedAt(LocalDateTime.now());
         entry.setUpdatedAt(LocalDateTime.now());
         return collageRepository.save(entry);
     }
 
     @Override
-    public CollageEntry actualizar(Long id, CollageEntry entry) {
-        collageRepository.findById(id)
+    public CollageEntry actualizarCollagePropio(Long id, CollageEntry entry, Long userId) {
+        collageRepository.findByIdAndCreatedBy(id, userId)
                 .orElseThrow(() -> new NotFoundException("Collage no encontrado"));
         entry.setId(id);
+        entry.setCreatedBy(userId);
         entry.setUpdatedAt(LocalDateTime.now());
         return collageRepository.save(entry);
     }
 
     @Override
-    public void eliminar(Long id) {
+    public void eliminarCollagePropio(Long id, Long userId) {
+        collageRepository.findByIdAndCreatedBy(id, userId)
+                .orElseThrow(() -> new NotFoundException("Collage no encontrado"));
         collageRepository.deleteById(id);
     }
 }

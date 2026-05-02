@@ -19,26 +19,31 @@ public class EtiquetaService implements EtiquetaServicePort {
     }
 
     @Override
-    public List<Etiqueta> obtenerTodas() {
-        return etiquetaRepository.findAll();
+    public List<Etiqueta> obtenerEtiquetasDelUsuario(Long userId) {
+        return etiquetaRepository.findAllByCreatedBy(userId);
     }
 
     @Override
-    public Etiqueta crear(Etiqueta etiqueta) {
+    public Etiqueta crearEtiquetaParaUsuario(Etiqueta etiqueta, Long userId) {
+        etiqueta.setCreatedBy(userId);
         etiqueta.setCreatedAt(LocalDateTime.now());
         return etiquetaRepository.save(etiqueta);
     }
 
     @Override
-    public Etiqueta actualizar(Long id, Etiqueta etiqueta) {
-        etiquetaRepository.findById(id)
+    public Etiqueta actualizarEtiquetaPropia(Long id, Etiqueta etiqueta, Long userId) {
+        Etiqueta existente = etiquetaRepository.findByIdAndCreatedBy(id, userId)
                 .orElseThrow(() -> new NotFoundException("Etiqueta no encontrada"));
         etiqueta.setId(id);
+        etiqueta.setCreatedBy(userId);
+        etiqueta.setCreatedAt(existente.getCreatedAt());
         return etiquetaRepository.save(etiqueta);
     }
 
     @Override
-    public void eliminar(Long id) {
+    public void eliminarEtiquetaPropia(Long id, Long userId) {
+        etiquetaRepository.findByIdAndCreatedBy(id, userId)
+                .orElseThrow(() -> new NotFoundException("Etiqueta no encontrada"));
         etiquetaRepository.deleteById(id);
     }
 }

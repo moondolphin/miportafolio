@@ -22,8 +22,8 @@ public class MoodHandler {
     }
 
     @GetMapping
-    public List<MoodEntry> listar() {
-        return moodService.obtenerTodos();
+    public List<MoodEntry> listar(@AuthenticationPrincipal AgendaUserDetails userDetails) {
+        return moodService.obtenerMoodsDelUsuario(userDetails.getUserId());
     }
 
     @PostMapping
@@ -33,12 +33,11 @@ public class MoodHandler {
         entry.setFecha(request.getFecha());
         entry.setEstadoAnimo(request.getEstadoAnimo());
         entry.setNota(request.getNota());
-        entry.setCreatedBy(userDetails.getUserId());
-        return moodService.registrar(entry);
+        return moodService.registrarMoodParaUsuario(entry, userDetails.getUserId());
     }
 
     @GetMapping("/stats")
-    public Map<EstadoAnimo, Long> estadisticas() {
-        return moodService.obtenerEstadisticas();
+    public Map<EstadoAnimo, Long> estadisticas(@AuthenticationPrincipal AgendaUserDetails userDetails) {
+        return moodService.obtenerEstadisticasMoodDelUsuario(userDetails.getUserId());
     }
 }

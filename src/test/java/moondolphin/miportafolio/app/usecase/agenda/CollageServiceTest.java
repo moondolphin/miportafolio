@@ -24,129 +24,128 @@ class CollageServiceTest {
 
     private CollageService service;
 
+    private static final Long USER_ID = 1L;
+    private static final Long OTRO_USER_ID = 2L;
+
     @BeforeEach
     void setUp() {
         service = new CollageService(collageRepository);
     }
 
-    // --- obtenerTodos ---
+    // --- obtenerCollageDelUsuario ---
 
     @Test
-    void obtenerTodos_retornaTodosLosCollages() {
-        // Arrange
+    void obtenerCollageDelUsuario_soloRetornaEntradasPropias() {
         List<CollageEntry> entries = List.of(new CollageEntry(), new CollageEntry());
-        when(collageRepository.findAll()).thenReturn(entries);
+        when(collageRepository.findAllByCreatedBy(USER_ID)).thenReturn(entries);
 
-        // Act
-        List<CollageEntry> resultado = service.obtenerTodos();
+        List<CollageEntry> resultado = service.obtenerCollageDelUsuario(USER_ID);
 
-        // Assert
         assertThat(resultado).hasSize(2);
-        verify(collageRepository).findAll();
+        verify(collageRepository).findAllByCreatedBy(USER_ID);
+        verify(collageRepository, never()).findAllByCreatedBy(OTRO_USER_ID);
     }
 
     @Test
-    void obtenerTodos_conListaVacia_retornaListaVacia() {
-        // Arrange
-        when(collageRepository.findAll()).thenReturn(List.of());
+    void obtenerCollageDelUsuario_conListaVacia_retornaListaVacia() {
+        when(collageRepository.findAllByCreatedBy(USER_ID)).thenReturn(List.of());
 
-        // Act + Assert
-        assertThat(service.obtenerTodos()).isEmpty();
+        assertThat(service.obtenerCollageDelUsuario(USER_ID)).isEmpty();
     }
 
-    // --- obtenerPorId ---
+    // --- obtenerCollagePropioPorId ---
 
     @Test
-    void obtenerPorId_conIdExistente_retornaOptionalConCollage() {
-        // Arrange
+    void obtenerCollagePropioPorId_conIdExistente_retornaOptionalConCollage() {
         CollageEntry entry = new CollageEntry();
         entry.setId(1L);
-        when(collageRepository.findById(1L)).thenReturn(Optional.of(entry));
+        when(collageRepository.findByIdAndCreatedBy(1L, USER_ID)).thenReturn(Optional.of(entry));
 
-        // Act
-        Optional<CollageEntry> resultado = service.obtenerPorId(1L);
+        Optional<CollageEntry> resultado = service.obtenerCollagePropioPorId(1L, USER_ID);
 
-        // Assert
         assertThat(resultado).isPresent();
         assertThat(resultado.get().getId()).isEqualTo(1L);
     }
 
     @Test
-    void obtenerPorId_conIdInexistente_retornaOptionalVacio() {
-        // Arrange
-        when(collageRepository.findById(99L)).thenReturn(Optional.empty());
+    void obtenerCollagePropioPorId_conIdInexistente_retornaOptionalVacio() {
+        when(collageRepository.findByIdAndCreatedBy(99L, USER_ID)).thenReturn(Optional.empty());
 
-        // Act
-        Optional<CollageEntry> resultado = service.obtenerPorId(99L);
+        Optional<CollageEntry> resultado = service.obtenerCollagePropioPorId(99L, USER_ID);
 
-        // Assert
         assertThat(resultado).isEmpty();
     }
 
-    // --- crear ---
+    // --- crearCollageParaUsuario ---
 
     @Test
-    void crear_asignaTimestampsYGuarda() {
-        // Arrange
+    void crearCollageParaUsuario_asignaCreatedByTimestampsYGuarda() {
         CollageEntry entry = new CollageEntry();
         entry.setTitulo("Collage enero");
         CollageEntry guardado = new CollageEntry();
         guardado.setId(1L);
         when(collageRepository.save(entry)).thenReturn(guardado);
 
-        // Act
-        CollageEntry resultado = service.crear(entry);
+        CollageEntry resultado = service.crearCollageParaUsuario(entry, USER_ID);
 
-        // Assert
+        assertThat(entry.getCreatedBy()).isEqualTo(USER_ID);
         assertThat(entry.getCreatedAt()).isNotNull();
         assertThat(entry.getUpdatedAt()).isNotNull();
         assertThat(resultado.getId()).isEqualTo(1L);
         verify(collageRepository).save(entry);
     }
 
-    // --- actualizar ---
+    // --- actualizarCollagePropio ---
 
     @Test
-    void actualizar_conIdExistente_asignaIdYUpdatedAtYGuarda() {
-        // Arrange
+    void actualizarCollagePropio_conIdExistente_asignaIdYUpdatedAtYGuarda() {
         CollageEntry existente = new CollageEntry();
         existente.setId(1L);
         CollageEntry nuevo = new CollageEntry();
         nuevo.setTitulo("Actualizado");
         CollageEntry guardado = new CollageEntry();
         guardado.setId(1L);
-        when(collageRepository.findById(1L)).thenReturn(Optional.of(existente));
+        when(collageRepository.findByIdAndCreatedBy(1L, USER_ID)).thenReturn(Optional.of(existente));
         when(collageRepository.save(nuevo)).thenReturn(guardado);
 
-        // Act
-        CollageEntry resultado = service.actualizar(1L, nuevo);
+        CollageEntry resultado = service.actualizarCollagePropio(1L, nuevo, USER_ID);
 
-        // Assert
         assertThat(nuevo.getId()).isEqualTo(1L);
+        assertThat(nuevo.getCreatedBy()).isEqualTo(USER_ID);
         assertThat(nuevo.getUpdatedAt()).isNotNull();
         assertThat(resultado.getId()).isEqualTo(1L);
     }
 
     @Test
-    void actualizar_conIdInexistente_lanzaExcepcionSinGuardar() {
-        // Arrange
-        when(collageRepository.findById(99L)).thenReturn(Optional.empty());
+    void actualizarCollagePropio_conRecursoAjeno_lanzaNotFoundExceptionSinGuardar() {
+        when(collageRepository.findByIdAndCreatedBy(99L, OTRO_USER_ID)).thenReturn(Optional.empty());
 
-        // Act + Assert
-        assertThatThrownBy(() -> service.actualizar(99L, new CollageEntry()))
+        assertThatThrownBy(() -> service.actualizarCollagePropio(99L, new CollageEntry(), OTRO_USER_ID))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("Collage no encontrado");
         verify(collageRepository, never()).save(any());
     }
 
-    // --- eliminar ---
+    // --- eliminarCollagePropio ---
 
     @Test
-    void eliminar_delegaAlRepositorio() {
-        // Act
-        service.eliminar(1L);
+    void eliminarCollagePropio_conIdPropio_delegaAlRepositorio() {
+        CollageEntry existente = new CollageEntry();
+        existente.setId(1L);
+        when(collageRepository.findByIdAndCreatedBy(1L, USER_ID)).thenReturn(Optional.of(existente));
 
-        // Assert
+        service.eliminarCollagePropio(1L, USER_ID);
+
         verify(collageRepository).deleteById(1L);
+    }
+
+    @Test
+    void eliminarCollagePropio_conRecursoAjeno_lanzaNotFoundExceptionSinEliminar() {
+        when(collageRepository.findByIdAndCreatedBy(1L, OTRO_USER_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.eliminarCollagePropio(1L, OTRO_USER_ID))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("Collage no encontrado");
+        verify(collageRepository, never()).deleteById(any());
     }
 }

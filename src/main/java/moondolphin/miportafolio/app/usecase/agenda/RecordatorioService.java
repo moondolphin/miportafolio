@@ -20,33 +20,37 @@ public class RecordatorioService implements RecordatorioServicePort {
     }
 
     @Override
-    public List<Recordatorio> obtenerTodos() {
-        return recordatorioRepository.findAll();
+    public List<Recordatorio> obtenerRecordatoriosDelUsuario(Long userId) {
+        return recordatorioRepository.findAllByCreatedBy(userId);
     }
 
     @Override
-    public Optional<Recordatorio> obtenerPorId(Long id) {
-        return recordatorioRepository.findById(id);
+    public Optional<Recordatorio> obtenerRecordatorioPropioPorId(Long id, Long userId) {
+        return recordatorioRepository.findByIdAndCreatedBy(id, userId);
     }
 
     @Override
-    public Recordatorio crear(Recordatorio recordatorio, List<Long> etiquetaIds) {
+    public Recordatorio crearRecordatorioParaUsuario(Recordatorio recordatorio, List<Long> etiquetaIds, Long userId) {
+        recordatorio.setCreatedBy(userId);
         recordatorio.setCreatedAt(LocalDateTime.now());
         recordatorio.setUpdatedAt(LocalDateTime.now());
         return recordatorioRepository.save(recordatorio, etiquetaIds);
     }
 
     @Override
-    public Recordatorio actualizar(Long id, Recordatorio recordatorio, List<Long> etiquetaIds) {
-        recordatorioRepository.findById(id)
+    public Recordatorio actualizarRecordatorioPropio(Long id, Recordatorio recordatorio, List<Long> etiquetaIds, Long userId) {
+        recordatorioRepository.findByIdAndCreatedBy(id, userId)
                 .orElseThrow(() -> new NotFoundException("Recordatorio no encontrado"));
         recordatorio.setId(id);
+        recordatorio.setCreatedBy(userId);
         recordatorio.setUpdatedAt(LocalDateTime.now());
         return recordatorioRepository.save(recordatorio, etiquetaIds);
     }
 
     @Override
-    public void eliminar(Long id) {
+    public void eliminarRecordatorioPropio(Long id, Long userId) {
+        recordatorioRepository.findByIdAndCreatedBy(id, userId)
+                .orElseThrow(() -> new NotFoundException("Recordatorio no encontrado"));
         recordatorioRepository.deleteById(id);
     }
 }

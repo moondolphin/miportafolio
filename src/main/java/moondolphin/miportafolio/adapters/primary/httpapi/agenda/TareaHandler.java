@@ -30,13 +30,15 @@ public class TareaHandler {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
             @RequestParam(required = false) Prioridad prioridad,
             @RequestParam(required = false) EstadoTarea estado,
-            @RequestParam(required = false) String tag) {
-        return tareaService.buscar(fecha, prioridad, estado, tag);
+            @RequestParam(required = false) String tag,
+            @AuthenticationPrincipal AgendaUserDetails userDetails) {
+        return tareaService.buscarTareasDelUsuario(userDetails.getUserId(), fecha, prioridad, estado, tag);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Tarea> obtener(@PathVariable Long id) {
-        return tareaService.obtenerPorId(id)
+    public ResponseEntity<Tarea> obtener(@PathVariable Long id,
+                                         @AuthenticationPrincipal AgendaUserDetails userDetails) {
+        return tareaService.obtenerTareaPropiaPorId(id, userDetails.getUserId())
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> new NotFoundException("Tarea no encontrada"));
     }
@@ -52,8 +54,7 @@ public class TareaHandler {
         tarea.setHoraFin(request.getHoraFin());
         tarea.setPrioridad(request.getPrioridad());
         tarea.setEstado(request.getEstado());
-        tarea.setCreatedBy(userDetails.getUserId());
-        return tareaService.crear(tarea, request.getEtiquetaIds());
+        return tareaService.crearTareaParaUsuario(tarea, request.getEtiquetaIds(), userDetails.getUserId());
     }
 
     @PutMapping("/{id}")
@@ -68,13 +69,13 @@ public class TareaHandler {
         tarea.setHoraFin(request.getHoraFin());
         tarea.setPrioridad(request.getPrioridad());
         tarea.setEstado(request.getEstado());
-        tarea.setCreatedBy(userDetails.getUserId());
-        return tareaService.actualizar(id, tarea, request.getEtiquetaIds());
+        return tareaService.actualizarTareaPropia(id, tarea, request.getEtiquetaIds(), userDetails.getUserId());
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        tareaService.eliminar(id);
+    public ResponseEntity<Void> eliminar(@PathVariable Long id,
+                                         @AuthenticationPrincipal AgendaUserDetails userDetails) {
+        tareaService.eliminarTareaPropia(id, userDetails.getUserId());
         return ResponseEntity.noContent().build();
     }
 }

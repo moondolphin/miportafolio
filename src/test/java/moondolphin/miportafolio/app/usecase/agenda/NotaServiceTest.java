@@ -25,128 +25,127 @@ class NotaServiceTest {
 
     private NotaService service;
 
+    private static final Long USER_ID = 1L;
+    private static final Long OTRO_USER_ID = 2L;
+
     @BeforeEach
     void setUp() {
         service = new NotaService(notaRepository);
     }
 
-    // --- obtenerTodas ---
+    // --- obtenerNotasDelUsuario ---
 
     @Test
-    void obtenerTodas_retornaTodasLasNotas() {
-        // Arrange
+    void obtenerNotasDelUsuario_soloRetornaNotasPropias() {
         List<NotaLibre> notas = List.of(new NotaLibre(), new NotaLibre());
-        when(notaRepository.findAll()).thenReturn(notas);
+        when(notaRepository.findAllByCreatedBy(USER_ID)).thenReturn(notas);
 
-        // Act
-        List<NotaLibre> resultado = service.obtenerTodas();
+        List<NotaLibre> resultado = service.obtenerNotasDelUsuario(USER_ID);
 
-        // Assert
         assertThat(resultado).hasSize(2);
-        verify(notaRepository).findAll();
+        verify(notaRepository).findAllByCreatedBy(USER_ID);
+        verify(notaRepository, never()).findAllByCreatedBy(OTRO_USER_ID);
     }
 
     @Test
-    void obtenerTodas_conListaVacia_retornaListaVacia() {
-        // Arrange
-        when(notaRepository.findAll()).thenReturn(List.of());
+    void obtenerNotasDelUsuario_conListaVacia_retornaListaVacia() {
+        when(notaRepository.findAllByCreatedBy(USER_ID)).thenReturn(List.of());
 
-        // Act + Assert
-        assertThat(service.obtenerTodas()).isEmpty();
+        assertThat(service.obtenerNotasDelUsuario(USER_ID)).isEmpty();
     }
 
-    // --- obtenerPorId ---
+    // --- obtenerNotaPropiaPorId ---
 
     @Test
-    void obtenerPorId_conIdExistente_retornaOptionalConNota() {
-        // Arrange
+    void obtenerNotaPropiaPorId_conIdExistente_retornaOptionalConNota() {
         NotaLibre nota = new NotaLibre();
         nota.setId(1L);
-        when(notaRepository.findById(1L)).thenReturn(Optional.of(nota));
+        when(notaRepository.findByIdAndCreatedBy(1L, USER_ID)).thenReturn(Optional.of(nota));
 
-        // Act
-        Optional<NotaLibre> resultado = service.obtenerPorId(1L);
+        Optional<NotaLibre> resultado = service.obtenerNotaPropiaPorId(1L, USER_ID);
 
-        // Assert
         assertThat(resultado).isPresent();
         assertThat(resultado.get().getId()).isEqualTo(1L);
     }
 
     @Test
-    void obtenerPorId_conIdInexistente_retornaOptionalVacio() {
-        // Arrange
-        when(notaRepository.findById(99L)).thenReturn(Optional.empty());
+    void obtenerNotaPropiaPorId_conIdInexistente_retornaOptionalVacio() {
+        when(notaRepository.findByIdAndCreatedBy(99L, USER_ID)).thenReturn(Optional.empty());
 
-        // Act
-        Optional<NotaLibre> resultado = service.obtenerPorId(99L);
+        Optional<NotaLibre> resultado = service.obtenerNotaPropiaPorId(99L, USER_ID);
 
-        // Assert
         assertThat(resultado).isEmpty();
     }
 
-    // --- crear ---
+    // --- crearNotaParaUsuario ---
 
     @Test
-    void crear_asignaTimestampsYGuarda() {
-        // Arrange
+    void crearNotaParaUsuario_asignaCreatedByTimestampsYGuarda() {
         NotaLibre nota = new NotaLibre();
         nota.setTitulo("Mi nota");
         NotaLibre guardada = new NotaLibre();
         guardada.setId(1L);
         when(notaRepository.save(eq(nota), anyList())).thenReturn(guardada);
 
-        // Act
-        NotaLibre resultado = service.crear(nota, List.of());
+        NotaLibre resultado = service.crearNotaParaUsuario(nota, List.of(), USER_ID);
 
-        // Assert
+        assertThat(nota.getCreatedBy()).isEqualTo(USER_ID);
         assertThat(nota.getCreatedAt()).isNotNull();
         assertThat(nota.getUpdatedAt()).isNotNull();
         assertThat(resultado.getId()).isEqualTo(1L);
     }
 
-    // --- actualizar ---
+    // --- actualizarNotaPropia ---
 
     @Test
-    void actualizar_conIdExistente_asignaIdYUpdatedAtYGuarda() {
-        // Arrange
+    void actualizarNotaPropia_conIdExistente_asignaIdYUpdatedAtYGuarda() {
         NotaLibre existente = new NotaLibre();
         existente.setId(1L);
         NotaLibre nueva = new NotaLibre();
         nueva.setTitulo("Actualizada");
         NotaLibre guardada = new NotaLibre();
         guardada.setId(1L);
-        when(notaRepository.findById(1L)).thenReturn(Optional.of(existente));
+        when(notaRepository.findByIdAndCreatedBy(1L, USER_ID)).thenReturn(Optional.of(existente));
         when(notaRepository.save(eq(nueva), anyList())).thenReturn(guardada);
 
-        // Act
-        NotaLibre resultado = service.actualizar(1L, nueva, List.of());
+        NotaLibre resultado = service.actualizarNotaPropia(1L, nueva, List.of(), USER_ID);
 
-        // Assert
         assertThat(nueva.getId()).isEqualTo(1L);
+        assertThat(nueva.getCreatedBy()).isEqualTo(USER_ID);
         assertThat(nueva.getUpdatedAt()).isNotNull();
         assertThat(resultado.getId()).isEqualTo(1L);
     }
 
     @Test
-    void actualizar_conIdInexistente_lanzaExcepcionSinGuardar() {
-        // Arrange
-        when(notaRepository.findById(99L)).thenReturn(Optional.empty());
+    void actualizarNotaPropia_conRecursoAjeno_lanzaNotFoundExceptionSinGuardar() {
+        when(notaRepository.findByIdAndCreatedBy(99L, OTRO_USER_ID)).thenReturn(Optional.empty());
 
-        // Act + Assert
-        assertThatThrownBy(() -> service.actualizar(99L, new NotaLibre(), List.of()))
+        assertThatThrownBy(() -> service.actualizarNotaPropia(99L, new NotaLibre(), List.of(), OTRO_USER_ID))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("Nota no encontrada");
         verify(notaRepository, never()).save(any(), any());
     }
 
-    // --- eliminar ---
+    // --- eliminarNotaPropia ---
 
     @Test
-    void eliminar_delegaAlRepositorio() {
-        // Act
-        service.eliminar(1L);
+    void eliminarNotaPropia_conIdPropio_delegaAlRepositorio() {
+        NotaLibre existente = new NotaLibre();
+        existente.setId(1L);
+        when(notaRepository.findByIdAndCreatedBy(1L, USER_ID)).thenReturn(Optional.of(existente));
 
-        // Assert
+        service.eliminarNotaPropia(1L, USER_ID);
+
         verify(notaRepository).deleteById(1L);
+    }
+
+    @Test
+    void eliminarNotaPropia_conRecursoAjeno_lanzaNotFoundExceptionSinEliminar() {
+        when(notaRepository.findByIdAndCreatedBy(1L, OTRO_USER_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.eliminarNotaPropia(1L, OTRO_USER_ID))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("Nota no encontrada");
+        verify(notaRepository, never()).deleteById(any());
     }
 }

@@ -25,13 +25,14 @@ public class LinkRepositoryAdapter implements LinkRepositoryPort {
     }
 
     @Override
-    public List<LinkItem> findAll() {
-        return jpaRepository.findAll().stream().map(LinkJpaEntity::toDomain).collect(Collectors.toList());
+    public List<LinkItem> findAllByCreatedBy(Long userId) {
+        return jpaRepository.findAllByCreatedByOrderByCreatedAtDesc(userId).stream()
+                .map(LinkJpaEntity::toDomain).collect(Collectors.toList());
     }
 
     @Override
-    public Optional<LinkItem> findById(Long id) {
-        return jpaRepository.findById(id).map(LinkJpaEntity::toDomain);
+    public Optional<LinkItem> findByIdAndCreatedBy(Long id, Long userId) {
+        return jpaRepository.findByIdAndCreatedBy(id, userId).map(LinkJpaEntity::toDomain);
     }
 
     @Override
@@ -47,7 +48,7 @@ public class LinkRepositoryAdapter implements LinkRepositoryPort {
         entity.setUpdatedAt(link.getUpdatedAt());
 
         if (etiquetaIds != null && !etiquetaIds.isEmpty()) {
-            List<EtiquetaJpaEntity> etiquetas = etiquetaJpaRepository.findByIdIn(etiquetaIds);
+            List<EtiquetaJpaEntity> etiquetas = etiquetaJpaRepository.findByIdInAndCreatedBy(etiquetaIds, link.getCreatedBy());
             entity.setEtiquetas(etiquetas);
         }
 
@@ -60,7 +61,8 @@ public class LinkRepositoryAdapter implements LinkRepositoryPort {
     }
 
     @Override
-    public List<LinkItem> searchByTexto(String texto) {
-        return jpaRepository.searchByTexto(texto).stream().map(LinkJpaEntity::toDomain).collect(Collectors.toList());
+    public List<LinkItem> searchByTextoAndCreatedBy(String texto, Long userId) {
+        return jpaRepository.searchByTextoAndCreatedBy(texto, userId).stream()
+                .map(LinkJpaEntity::toDomain).collect(Collectors.toList());
     }
 }

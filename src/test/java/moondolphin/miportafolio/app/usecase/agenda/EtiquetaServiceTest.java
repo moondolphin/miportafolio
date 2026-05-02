@@ -25,99 +25,103 @@ class EtiquetaServiceTest {
 
     private EtiquetaService service;
 
+    private static final Long USER_ID = 1L;
+    private static final Long OTRO_USER_ID = 2L;
+
     @BeforeEach
     void setUp() {
         service = new EtiquetaService(etiquetaRepository);
     }
 
-    // --- obtenerTodas ---
+    // --- obtenerEtiquetasDelUsuario ---
 
     @Test
-    void obtenerTodas_retornaTodasLasEtiquetas() {
-        // Arrange
+    void obtenerEtiquetasDelUsuario_soloRetornaEtiquetasPropias() {
         List<Etiqueta> etiquetas = List.of(
-                new Etiqueta(1L, "trabajo", "#ff0000", LocalDateTime.now()),
-                new Etiqueta(2L, "personal", "#00ff00", LocalDateTime.now())
+                new Etiqueta(1L, "trabajo", "#ff0000", USER_ID, LocalDateTime.now()),
+                new Etiqueta(2L, "personal", "#00ff00", USER_ID, LocalDateTime.now())
         );
-        when(etiquetaRepository.findAll()).thenReturn(etiquetas);
+        when(etiquetaRepository.findAllByCreatedBy(USER_ID)).thenReturn(etiquetas);
 
-        // Act
-        List<Etiqueta> resultado = service.obtenerTodas();
+        List<Etiqueta> resultado = service.obtenerEtiquetasDelUsuario(USER_ID);
 
-        // Assert
         assertThat(resultado).hasSize(2);
-        verify(etiquetaRepository).findAll();
+        verify(etiquetaRepository).findAllByCreatedBy(USER_ID);
+        verify(etiquetaRepository, never()).findAllByCreatedBy(OTRO_USER_ID);
     }
 
     @Test
-    void obtenerTodas_conListaVacia_retornaListaVacia() {
-        // Arrange
-        when(etiquetaRepository.findAll()).thenReturn(List.of());
+    void obtenerEtiquetasDelUsuario_conListaVacia_retornaListaVacia() {
+        when(etiquetaRepository.findAllByCreatedBy(USER_ID)).thenReturn(List.of());
 
-        // Act + Assert
-        assertThat(service.obtenerTodas()).isEmpty();
+        assertThat(service.obtenerEtiquetasDelUsuario(USER_ID)).isEmpty();
     }
 
-    // --- crear ---
+    // --- crearEtiquetaParaUsuario ---
 
     @Test
-    void crear_asignaCreatedAtYGuarda() {
-        // Arrange
+    void crearEtiquetaParaUsuario_asignaCreatedByTimestampYGuarda() {
         Etiqueta etiqueta = new Etiqueta();
         etiqueta.setNombre("urgente");
         etiqueta.setColor("#ff0000");
-        Etiqueta guardada = new Etiqueta(1L, "urgente", "#ff0000", LocalDateTime.now());
+        Etiqueta guardada = new Etiqueta(1L, "urgente", "#ff0000", USER_ID, LocalDateTime.now());
         when(etiquetaRepository.save(etiqueta)).thenReturn(guardada);
 
-        // Act
-        Etiqueta resultado = service.crear(etiqueta);
+        Etiqueta resultado = service.crearEtiquetaParaUsuario(etiqueta, USER_ID);
 
-        // Assert
+        assertThat(etiqueta.getCreatedBy()).isEqualTo(USER_ID);
         assertThat(etiqueta.getCreatedAt()).isNotNull();
         assertThat(resultado.getId()).isEqualTo(1L);
         verify(etiquetaRepository).save(etiqueta);
     }
 
-    // --- actualizar ---
+    // --- actualizarEtiquetaPropia ---
 
     @Test
-    void actualizar_conIdExistente_asignaIdYGuarda() {
-        // Arrange
-        Etiqueta existente = new Etiqueta(1L, "trabajo", "#ff0000", LocalDateTime.now());
+    void actualizarEtiquetaPropia_conIdExistente_asignaIdYGuarda() {
+        Etiqueta existente = new Etiqueta(1L, "trabajo", "#ff0000", USER_ID, LocalDateTime.now());
         Etiqueta nueva = new Etiqueta();
         nueva.setNombre("trabajo-actualizado");
-        Etiqueta guardada = new Etiqueta(1L, "trabajo-actualizado", "#ff0000", LocalDateTime.now());
-        when(etiquetaRepository.findById(1L)).thenReturn(Optional.of(existente));
+        Etiqueta guardada = new Etiqueta(1L, "trabajo-actualizado", "#ff0000", USER_ID, LocalDateTime.now());
+        when(etiquetaRepository.findByIdAndCreatedBy(1L, USER_ID)).thenReturn(Optional.of(existente));
         when(etiquetaRepository.save(nueva)).thenReturn(guardada);
 
-        // Act
-        Etiqueta resultado = service.actualizar(1L, nueva);
+        Etiqueta resultado = service.actualizarEtiquetaPropia(1L, nueva, USER_ID);
 
-        // Assert
         assertThat(nueva.getId()).isEqualTo(1L);
+        assertThat(nueva.getCreatedBy()).isEqualTo(USER_ID);
         assertThat(resultado.getNombre()).isEqualTo("trabajo-actualizado");
     }
 
     @Test
-    void actualizar_conIdInexistente_lanzaExcepcionSinGuardar() {
-        // Arrange
-        when(etiquetaRepository.findById(99L)).thenReturn(Optional.empty());
+    void actualizarEtiquetaPropia_conRecursoAjeno_lanzaNotFoundExceptionSinGuardar() {
+        when(etiquetaRepository.findByIdAndCreatedBy(1L, OTRO_USER_ID)).thenReturn(Optional.empty());
 
-        // Act + Assert
-        assertThatThrownBy(() -> service.actualizar(99L, new Etiqueta()))
+        assertThatThrownBy(() -> service.actualizarEtiquetaPropia(1L, new Etiqueta(), OTRO_USER_ID))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("Etiqueta no encontrada");
         verify(etiquetaRepository, never()).save(any());
     }
 
-    // --- eliminar ---
+    // --- eliminarEtiquetaPropia ---
 
     @Test
-    void eliminar_delegaAlRepositorio() {
-        // Act
-        service.eliminar(1L);
+    void eliminarEtiquetaPropia_conIdPropio_delegaAlRepositorio() {
+        Etiqueta existente = new Etiqueta(1L, "trabajo", "#ff0000", USER_ID, LocalDateTime.now());
+        when(etiquetaRepository.findByIdAndCreatedBy(1L, USER_ID)).thenReturn(Optional.of(existente));
 
-        // Assert
+        service.eliminarEtiquetaPropia(1L, USER_ID);
+
         verify(etiquetaRepository).deleteById(1L);
+    }
+
+    @Test
+    void eliminarEtiquetaPropia_conRecursoAjeno_lanzaNotFoundExceptionSinEliminar() {
+        when(etiquetaRepository.findByIdAndCreatedBy(1L, OTRO_USER_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.eliminarEtiquetaPropia(1L, OTRO_USER_ID))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("Etiqueta no encontrada");
+        verify(etiquetaRepository, never()).deleteById(any());
     }
 }

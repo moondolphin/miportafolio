@@ -22,13 +22,14 @@ public class NotaHandler {
     }
 
     @GetMapping
-    public List<NotaLibre> listar() {
-        return notaService.obtenerTodas();
+    public List<NotaLibre> listar(@AuthenticationPrincipal AgendaUserDetails userDetails) {
+        return notaService.obtenerNotasDelUsuario(userDetails.getUserId());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<NotaLibre> obtener(@PathVariable Long id) {
-        return notaService.obtenerPorId(id)
+    public ResponseEntity<NotaLibre> obtener(@PathVariable Long id,
+                                             @AuthenticationPrincipal AgendaUserDetails userDetails) {
+        return notaService.obtenerNotaPropiaPorId(id, userDetails.getUserId())
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> new NotFoundException("Nota no encontrada"));
     }
@@ -40,8 +41,7 @@ public class NotaHandler {
         nota.setTitulo(request.getTitulo());
         nota.setContenido(request.getContenido());
         nota.setFechaReferencia(request.getFechaReferencia());
-        nota.setCreatedBy(userDetails.getUserId());
-        return notaService.crear(nota, request.getEtiquetaIds());
+        return notaService.crearNotaParaUsuario(nota, request.getEtiquetaIds(), userDetails.getUserId());
     }
 
     @PutMapping("/{id}")
@@ -52,13 +52,13 @@ public class NotaHandler {
         nota.setTitulo(request.getTitulo());
         nota.setContenido(request.getContenido());
         nota.setFechaReferencia(request.getFechaReferencia());
-        nota.setCreatedBy(userDetails.getUserId());
-        return notaService.actualizar(id, nota, request.getEtiquetaIds());
+        return notaService.actualizarNotaPropia(id, nota, request.getEtiquetaIds(), userDetails.getUserId());
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        notaService.eliminar(id);
+    public ResponseEntity<Void> eliminar(@PathVariable Long id,
+                                         @AuthenticationPrincipal AgendaUserDetails userDetails) {
+        notaService.eliminarNotaPropia(id, userDetails.getUserId());
         return ResponseEntity.noContent().build();
     }
 }

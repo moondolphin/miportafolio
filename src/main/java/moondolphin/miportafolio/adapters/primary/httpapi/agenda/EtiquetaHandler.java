@@ -1,9 +1,11 @@
 package moondolphin.miportafolio.adapters.primary.httpapi.agenda;
 
 import moondolphin.miportafolio.adapters.primary.httpapi.agenda.dto.EtiquetaRequest;
+import moondolphin.miportafolio.bootstrap.security.AgendaUserDetails;
 import moondolphin.miportafolio.domain.model.agenda.Etiqueta;
 import moondolphin.miportafolio.domain.port.in.agenda.EtiquetaServicePort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,29 +21,33 @@ public class EtiquetaHandler {
     }
 
     @GetMapping
-    public List<Etiqueta> listar() {
-        return etiquetaService.obtenerTodas();
+    public List<Etiqueta> listar(@AuthenticationPrincipal AgendaUserDetails userDetails) {
+        return etiquetaService.obtenerEtiquetasDelUsuario(userDetails.getUserId());
     }
 
     @PostMapping
-    public Etiqueta crear(@RequestBody EtiquetaRequest request) {
+    public Etiqueta crear(@RequestBody EtiquetaRequest request,
+                          @AuthenticationPrincipal AgendaUserDetails userDetails) {
         Etiqueta etiqueta = new Etiqueta();
         etiqueta.setNombre(request.getNombre());
         etiqueta.setColor(request.getColor());
-        return etiquetaService.crear(etiqueta);
+        return etiquetaService.crearEtiquetaParaUsuario(etiqueta, userDetails.getUserId());
     }
 
     @PutMapping("/{id}")
-    public Etiqueta actualizar(@PathVariable Long id, @RequestBody EtiquetaRequest request) {
+    public Etiqueta actualizar(@PathVariable Long id,
+                               @RequestBody EtiquetaRequest request,
+                               @AuthenticationPrincipal AgendaUserDetails userDetails) {
         Etiqueta etiqueta = new Etiqueta();
         etiqueta.setNombre(request.getNombre());
         etiqueta.setColor(request.getColor());
-        return etiquetaService.actualizar(id, etiqueta);
+        return etiquetaService.actualizarEtiquetaPropia(id, etiqueta, userDetails.getUserId());
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        etiquetaService.eliminar(id);
+    public ResponseEntity<Void> eliminar(@PathVariable Long id,
+                                         @AuthenticationPrincipal AgendaUserDetails userDetails) {
+        etiquetaService.eliminarEtiquetaPropia(id, userDetails.getUserId());
         return ResponseEntity.noContent().build();
     }
 }

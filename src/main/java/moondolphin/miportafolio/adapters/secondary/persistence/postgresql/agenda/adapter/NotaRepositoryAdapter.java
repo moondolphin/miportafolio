@@ -25,13 +25,14 @@ public class NotaRepositoryAdapter implements NotaRepositoryPort {
     }
 
     @Override
-    public List<NotaLibre> findAll() {
-        return jpaRepository.findAll().stream().map(NotaJpaEntity::toDomain).collect(Collectors.toList());
+    public List<NotaLibre> findAllByCreatedBy(Long userId) {
+        return jpaRepository.findAllByCreatedByOrderByCreatedAtDesc(userId).stream()
+                .map(NotaJpaEntity::toDomain).collect(Collectors.toList());
     }
 
     @Override
-    public Optional<NotaLibre> findById(Long id) {
-        return jpaRepository.findById(id).map(NotaJpaEntity::toDomain);
+    public Optional<NotaLibre> findByIdAndCreatedBy(Long id, Long userId) {
+        return jpaRepository.findByIdAndCreatedBy(id, userId).map(NotaJpaEntity::toDomain);
     }
 
     @Override
@@ -46,7 +47,7 @@ public class NotaRepositoryAdapter implements NotaRepositoryPort {
         entity.setUpdatedAt(nota.getUpdatedAt());
 
         if (etiquetaIds != null && !etiquetaIds.isEmpty()) {
-            List<EtiquetaJpaEntity> etiquetas = etiquetaJpaRepository.findByIdIn(etiquetaIds);
+            List<EtiquetaJpaEntity> etiquetas = etiquetaJpaRepository.findByIdInAndCreatedBy(etiquetaIds, nota.getCreatedBy());
             entity.setEtiquetas(etiquetas);
         }
 
@@ -59,7 +60,8 @@ public class NotaRepositoryAdapter implements NotaRepositoryPort {
     }
 
     @Override
-    public List<NotaLibre> searchByTexto(String texto) {
-        return jpaRepository.searchByTexto(texto).stream().map(NotaJpaEntity::toDomain).collect(Collectors.toList());
+    public List<NotaLibre> searchByTextoAndCreatedBy(String texto, Long userId) {
+        return jpaRepository.searchByTextoAndCreatedBy(texto, userId).stream()
+                .map(NotaJpaEntity::toDomain).collect(Collectors.toList());
     }
 }

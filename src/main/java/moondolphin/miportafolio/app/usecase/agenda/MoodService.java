@@ -20,18 +20,19 @@ public class MoodService implements MoodServicePort {
     }
 
     @Override
-    public List<MoodEntry> obtenerTodos() {
-        return moodRepository.findAll();
+    public List<MoodEntry> obtenerMoodsDelUsuario(Long userId) {
+        return moodRepository.findAllByCreatedBy(userId);
     }
 
     @Override
-    public MoodEntry registrar(MoodEntry entry) {
+    public MoodEntry registrarMoodParaUsuario(MoodEntry entry, Long userId) {
+        entry.setCreatedBy(userId);
         entry.setCreatedAt(LocalDateTime.now());
         return moodRepository.save(entry);
     }
 
     @Override
-    public Map<EstadoAnimo, Long> obtenerEstadisticas() {
-        return moodRepository.countByEstadoAnimo();
+    public Map<EstadoAnimo, Long> obtenerEstadisticasMoodDelUsuario(Long userId) {
+        return moodRepository.countByEstadoAnimoAndCreatedBy(userId);
     }
 }

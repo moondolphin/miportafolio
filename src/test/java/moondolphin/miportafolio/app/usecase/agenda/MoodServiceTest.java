@@ -24,41 +24,39 @@ class MoodServiceTest {
 
     private MoodService service;
 
+    private static final Long USER_ID = 1L;
+    private static final Long OTRO_USER_ID = 2L;
+
     @BeforeEach
     void setUp() {
         service = new MoodService(moodRepository);
     }
 
-    // --- obtenerTodos ---
+    // --- obtenerMoodsDelUsuario ---
 
     @Test
-    void obtenerTodos_retornaTodosLosRegistros() {
-        // Arrange
+    void obtenerMoodsDelUsuario_soloRetornaMoodsPropios() {
         List<MoodEntry> entries = List.of(new MoodEntry(), new MoodEntry());
-        when(moodRepository.findAll()).thenReturn(entries);
+        when(moodRepository.findAllByCreatedBy(USER_ID)).thenReturn(entries);
 
-        // Act
-        List<MoodEntry> resultado = service.obtenerTodos();
+        List<MoodEntry> resultado = service.obtenerMoodsDelUsuario(USER_ID);
 
-        // Assert
         assertThat(resultado).hasSize(2);
-        verify(moodRepository).findAll();
+        verify(moodRepository).findAllByCreatedBy(USER_ID);
+        verify(moodRepository, never()).findAllByCreatedBy(OTRO_USER_ID);
     }
 
     @Test
-    void obtenerTodos_conListaVacia_retornaListaVacia() {
-        // Arrange
-        when(moodRepository.findAll()).thenReturn(List.of());
+    void obtenerMoodsDelUsuario_conListaVacia_retornaListaVacia() {
+        when(moodRepository.findAllByCreatedBy(USER_ID)).thenReturn(List.of());
 
-        // Act + Assert
-        assertThat(service.obtenerTodos()).isEmpty();
+        assertThat(service.obtenerMoodsDelUsuario(USER_ID)).isEmpty();
     }
 
-    // --- registrar ---
+    // --- registrarMoodParaUsuario ---
 
     @Test
-    void registrar_asignaCreatedAtYGuarda() {
-        // Arrange
+    void registrarMoodParaUsuario_asignaCreatedByYTimestampYGuarda() {
         MoodEntry entry = new MoodEntry();
         entry.setFecha(LocalDate.now());
         entry.setEstadoAnimo(EstadoAnimo.MUY_BIEN);
@@ -66,18 +64,16 @@ class MoodServiceTest {
         guardado.setId(1L);
         when(moodRepository.save(entry)).thenReturn(guardado);
 
-        // Act
-        MoodEntry resultado = service.registrar(entry);
+        MoodEntry resultado = service.registrarMoodParaUsuario(entry, USER_ID);
 
-        // Assert
+        assertThat(entry.getCreatedBy()).isEqualTo(USER_ID);
         assertThat(entry.getCreatedAt()).isNotNull();
         assertThat(resultado.getId()).isEqualTo(1L);
         verify(moodRepository).save(entry);
     }
 
     @Test
-    void registrar_conDiferentesEstados_guardaElEstadoRecibido() {
-        // Arrange
+    void registrarMoodParaUsuario_conDiferentesEstados_guardaElEstadoRecibido() {
         MoodEntry entry = new MoodEntry();
         entry.setEstadoAnimo(EstadoAnimo.MUY_MAL);
         MoodEntry guardado = new MoodEntry();
@@ -85,44 +81,37 @@ class MoodServiceTest {
         guardado.setId(2L);
         when(moodRepository.save(entry)).thenReturn(guardado);
 
-        // Act
-        MoodEntry resultado = service.registrar(entry);
+        MoodEntry resultado = service.registrarMoodParaUsuario(entry, USER_ID);
 
-        // Assert
         assertThat(resultado.getEstadoAnimo()).isEqualTo(EstadoAnimo.MUY_MAL);
     }
 
-    // --- obtenerEstadisticas ---
+    // --- obtenerEstadisticasMoodDelUsuario ---
 
     @Test
-    void obtenerEstadisticas_retornaMapaDelRepositorio() {
-        // Arrange
+    void obtenerEstadisticasMoodDelUsuario_retornaMapaFiltradoPorUsuario() {
         Map<EstadoAnimo, Long> stats = Map.of(
                 EstadoAnimo.MUY_BIEN, 5L,
                 EstadoAnimo.BIEN,     3L,
                 EstadoAnimo.MAL,      2L
         );
-        when(moodRepository.countByEstadoAnimo()).thenReturn(stats);
+        when(moodRepository.countByEstadoAnimoAndCreatedBy(USER_ID)).thenReturn(stats);
 
-        // Act
-        Map<EstadoAnimo, Long> resultado = service.obtenerEstadisticas();
+        Map<EstadoAnimo, Long> resultado = service.obtenerEstadisticasMoodDelUsuario(USER_ID);
 
-        // Assert
         assertThat(resultado).containsEntry(EstadoAnimo.MUY_BIEN, 5L);
         assertThat(resultado).containsEntry(EstadoAnimo.BIEN, 3L);
         assertThat(resultado).containsEntry(EstadoAnimo.MAL, 2L);
-        verify(moodRepository).countByEstadoAnimo();
+        verify(moodRepository).countByEstadoAnimoAndCreatedBy(USER_ID);
+        verify(moodRepository, never()).countByEstadoAnimoAndCreatedBy(OTRO_USER_ID);
     }
 
     @Test
-    void obtenerEstadisticas_conMapaVacio_retornaMapaVacio() {
-        // Arrange
-        when(moodRepository.countByEstadoAnimo()).thenReturn(Map.of());
+    void obtenerEstadisticasMoodDelUsuario_conMapaVacio_retornaMapaVacio() {
+        when(moodRepository.countByEstadoAnimoAndCreatedBy(USER_ID)).thenReturn(Map.of());
 
-        // Act
-        Map<EstadoAnimo, Long> resultado = service.obtenerEstadisticas();
+        Map<EstadoAnimo, Long> resultado = service.obtenerEstadisticasMoodDelUsuario(USER_ID);
 
-        // Assert
         assertThat(resultado).isEmpty();
     }
 }

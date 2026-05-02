@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface RecordatorioRepositoryPort {
-    List<Recordatorio> findAll();
-    Optional<Recordatorio> findById(Long id);
+    List<Recordatorio> findAllByCreatedBy(Long userId);
+    Optional<Recordatorio> findByIdAndCreatedBy(Long id, Long userId);
     Recordatorio save(Recordatorio recordatorio, List<Long> etiquetaIds);
     void deleteById(Long id);
 }

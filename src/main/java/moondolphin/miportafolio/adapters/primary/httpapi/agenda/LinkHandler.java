@@ -22,13 +22,14 @@ public class LinkHandler {
     }
 
     @GetMapping
-    public List<LinkItem> listar() {
-        return linkService.obtenerTodos();
+    public List<LinkItem> listar(@AuthenticationPrincipal AgendaUserDetails userDetails) {
+        return linkService.obtenerLinksDelUsuario(userDetails.getUserId());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<LinkItem> obtener(@PathVariable Long id) {
-        return linkService.obtenerPorId(id)
+    public ResponseEntity<LinkItem> obtener(@PathVariable Long id,
+                                            @AuthenticationPrincipal AgendaUserDetails userDetails) {
+        return linkService.obtenerLinkPropioPorId(id, userDetails.getUserId())
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> new NotFoundException("Link no encontrado"));
     }
@@ -41,8 +42,7 @@ public class LinkHandler {
         link.setUrl(request.getUrl());
         link.setDescripcion(request.getDescripcion());
         link.setFechaReferencia(request.getFechaReferencia());
-        link.setCreatedBy(userDetails.getUserId());
-        return linkService.crear(link, request.getEtiquetaIds());
+        return linkService.crearLinkParaUsuario(link, request.getEtiquetaIds(), userDetails.getUserId());
     }
 
     @PutMapping("/{id}")
@@ -54,13 +54,13 @@ public class LinkHandler {
         link.setUrl(request.getUrl());
         link.setDescripcion(request.getDescripcion());
         link.setFechaReferencia(request.getFechaReferencia());
-        link.setCreatedBy(userDetails.getUserId());
-        return linkService.actualizar(id, link, request.getEtiquetaIds());
+        return linkService.actualizarLinkPropio(id, link, request.getEtiquetaIds(), userDetails.getUserId());
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        linkService.eliminar(id);
+    public ResponseEntity<Void> eliminar(@PathVariable Long id,
+                                         @AuthenticationPrincipal AgendaUserDetails userDetails) {
+        linkService.eliminarLinkPropio(id, userDetails.getUserId());
         return ResponseEntity.noContent().build();
     }
 }

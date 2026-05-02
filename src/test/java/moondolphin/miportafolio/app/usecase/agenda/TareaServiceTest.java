@@ -28,6 +28,9 @@ class TareaServiceTest {
 
     private TareaService service;
 
+    private static final Long USER_ID = 1L;
+    private static final Long OTRO_USER_ID = 2L;
+
     @BeforeEach
     void setUp() {
         service = new TareaService(tareaRepository);
@@ -41,177 +44,131 @@ class TareaServiceTest {
         return t;
     }
 
-    // --- obtenerTodas ---
+    // --- buscarTareasDelUsuario ---
 
     @Test
-    void obtenerTodas_retornaTodasLasTareas() {
-        // Arrange
+    void buscarTareasDelUsuario_soloRetornaTareasDelUsuario() {
         List<Tarea> tareas = List.of(tareaBase(), tareaBase());
-        when(tareaRepository.findAll()).thenReturn(tareas);
+        when(tareaRepository.findAllByCreatedBy(USER_ID)).thenReturn(tareas);
 
-        // Act
-        List<Tarea> resultado = service.obtenerTodas();
+        List<Tarea> resultado = service.buscarTareasDelUsuario(USER_ID, null, null, null, null);
 
-        // Assert
         assertThat(resultado).hasSize(2);
-        verify(tareaRepository).findAll();
+        verify(tareaRepository).findAllByCreatedBy(USER_ID);
+        verify(tareaRepository, never()).findAllByCreatedBy(OTRO_USER_ID);
     }
 
     @Test
-    void obtenerTodas_conListaVacia_retornaListaVacia() {
-        // Arrange
-        when(tareaRepository.findAll()).thenReturn(List.of());
+    void buscarTareasDelUsuario_conListaVacia_retornaListaVacia() {
+        when(tareaRepository.findAllByCreatedBy(USER_ID)).thenReturn(List.of());
 
-        // Act + Assert
-        assertThat(service.obtenerTodas()).isEmpty();
+        assertThat(service.buscarTareasDelUsuario(USER_ID, null, null, null, null)).isEmpty();
     }
 
-    // --- buscar ---
-
     @Test
-    void buscar_conFecha_usaFindByFecha() {
-        // Arrange
+    void buscarTareasDelUsuario_conFecha_usaFindByFechaAndCreatedBy() {
         LocalDate hoy = LocalDate.now();
         List<Tarea> tareas = List.of(tareaBase());
-        when(tareaRepository.findByFecha(hoy)).thenReturn(tareas);
+        when(tareaRepository.findByFechaAndCreatedBy(hoy, USER_ID)).thenReturn(tareas);
 
-        // Act
-        List<Tarea> resultado = service.buscar(hoy, null, null, null);
+        List<Tarea> resultado = service.buscarTareasDelUsuario(USER_ID, hoy, null, null, null);
 
-        // Assert
         assertThat(resultado).hasSize(1);
-        verify(tareaRepository).findByFecha(hoy);
-        verify(tareaRepository, never()).findByPrioridad(any());
-        verify(tareaRepository, never()).findByEstado(any());
-        verify(tareaRepository, never()).findByEtiquetaNombre(any());
+        verify(tareaRepository).findByFechaAndCreatedBy(hoy, USER_ID);
+        verify(tareaRepository, never()).findByPrioridadAndCreatedBy(any(), any());
     }
 
     @Test
-    void buscar_conPrioridad_usaFindByPrioridad() {
-        // Arrange
+    void buscarTareasDelUsuario_conPrioridad_usaFindByPrioridadAndCreatedBy() {
         List<Tarea> tareas = List.of(tareaBase());
-        when(tareaRepository.findByPrioridad(Prioridad.ALTA)).thenReturn(tareas);
+        when(tareaRepository.findByPrioridadAndCreatedBy(Prioridad.ALTA, USER_ID)).thenReturn(tareas);
 
-        // Act
-        List<Tarea> resultado = service.buscar(null, Prioridad.ALTA, null, null);
+        List<Tarea> resultado = service.buscarTareasDelUsuario(USER_ID, null, Prioridad.ALTA, null, null);
 
-        // Assert
         assertThat(resultado).hasSize(1);
-        verify(tareaRepository).findByPrioridad(Prioridad.ALTA);
+        verify(tareaRepository).findByPrioridadAndCreatedBy(Prioridad.ALTA, USER_ID);
     }
 
     @Test
-    void buscar_conEstado_usaFindByEstado() {
-        // Arrange
+    void buscarTareasDelUsuario_conEstado_usaFindByEstadoAndCreatedBy() {
         List<Tarea> tareas = List.of(tareaBase());
-        when(tareaRepository.findByEstado(EstadoTarea.PENDIENTE)).thenReturn(tareas);
+        when(tareaRepository.findByEstadoAndCreatedBy(EstadoTarea.PENDIENTE, USER_ID)).thenReturn(tareas);
 
-        // Act
-        List<Tarea> resultado = service.buscar(null, null, EstadoTarea.PENDIENTE, null);
+        List<Tarea> resultado = service.buscarTareasDelUsuario(USER_ID, null, null, EstadoTarea.PENDIENTE, null);
 
-        // Assert
         assertThat(resultado).hasSize(1);
-        verify(tareaRepository).findByEstado(EstadoTarea.PENDIENTE);
+        verify(tareaRepository).findByEstadoAndCreatedBy(EstadoTarea.PENDIENTE, USER_ID);
     }
 
     @Test
-    void buscar_conTag_usaFindByEtiquetaNombre() {
-        // Arrange
+    void buscarTareasDelUsuario_conTag_usaFindByEtiquetaNombreAndCreatedBy() {
         List<Tarea> tareas = List.of(tareaBase());
-        when(tareaRepository.findByEtiquetaNombre("trabajo")).thenReturn(tareas);
+        when(tareaRepository.findByEtiquetaNombreAndCreatedBy("trabajo", USER_ID)).thenReturn(tareas);
 
-        // Act
-        List<Tarea> resultado = service.buscar(null, null, null, "trabajo");
+        List<Tarea> resultado = service.buscarTareasDelUsuario(USER_ID, null, null, null, "trabajo");
 
-        // Assert
         assertThat(resultado).hasSize(1);
-        verify(tareaRepository).findByEtiquetaNombre("trabajo");
+        verify(tareaRepository).findByEtiquetaNombreAndCreatedBy("trabajo", USER_ID);
     }
 
     @Test
-    void buscar_sinFiltros_retornaTodas() {
-        // Arrange
-        List<Tarea> tareas = List.of(tareaBase(), tareaBase());
-        when(tareaRepository.findAll()).thenReturn(tareas);
-
-        // Act
-        List<Tarea> resultado = service.buscar(null, null, null, null);
-
-        // Assert
-        assertThat(resultado).hasSize(2);
-        verify(tareaRepository).findAll();
-    }
-
-    @Test
-    void buscar_conFechaYPrioridad_laFechaTienePrioridad() {
-        // Arrange — cuando se pasan ambos, el if de fecha gana por orden de evaluación
+    void buscarTareasDelUsuario_conFechaYPrioridad_laFechaTienePrioridad() {
         LocalDate hoy = LocalDate.now();
         List<Tarea> tareas = List.of(tareaBase());
-        when(tareaRepository.findByFecha(hoy)).thenReturn(tareas);
+        when(tareaRepository.findByFechaAndCreatedBy(hoy, USER_ID)).thenReturn(tareas);
 
-        // Act
-        List<Tarea> resultado = service.buscar(hoy, Prioridad.ALTA, null, null);
+        List<Tarea> resultado = service.buscarTareasDelUsuario(USER_ID, hoy, Prioridad.ALTA, null, null);
 
-        // Assert
         assertThat(resultado).hasSize(1);
-        verify(tareaRepository).findByFecha(hoy);
-        verify(tareaRepository, never()).findByPrioridad(any());
+        verify(tareaRepository).findByFechaAndCreatedBy(hoy, USER_ID);
+        verify(tareaRepository, never()).findByPrioridadAndCreatedBy(any(), any());
     }
 
-    // --- obtenerPorId ---
+    // --- obtenerTareaPropiaPorId ---
 
     @Test
-    void obtenerPorId_conIdExistente_retornaOptionalConTarea() {
-        // Arrange
+    void obtenerTareaPropiaPorId_conIdExistente_retornaOptionalConTarea() {
         Tarea tarea = tareaBase();
         tarea.setId(1L);
-        when(tareaRepository.findById(1L)).thenReturn(Optional.of(tarea));
+        when(tareaRepository.findByIdAndCreatedBy(1L, USER_ID)).thenReturn(Optional.of(tarea));
 
-        // Act
-        Optional<Tarea> resultado = service.obtenerPorId(1L);
+        Optional<Tarea> resultado = service.obtenerTareaPropiaPorId(1L, USER_ID);
 
-        // Assert
         assertThat(resultado).isPresent();
         assertThat(resultado.get().getId()).isEqualTo(1L);
     }
 
     @Test
-    void obtenerPorId_conIdInexistente_retornaOptionalVacio() {
-        // Arrange
-        when(tareaRepository.findById(99L)).thenReturn(Optional.empty());
+    void obtenerTareaPropiaPorId_conIdInexistente_retornaOptionalVacio() {
+        when(tareaRepository.findByIdAndCreatedBy(99L, USER_ID)).thenReturn(Optional.empty());
 
-        // Act
-        Optional<Tarea> resultado = service.obtenerPorId(99L);
+        Optional<Tarea> resultado = service.obtenerTareaPropiaPorId(99L, USER_ID);
 
-        // Assert
         assertThat(resultado).isEmpty();
     }
 
-    // --- crear ---
+    // --- crearTareaParaUsuario ---
 
     @Test
-    void crear_asignaTimestampsYGuarda() {
-        // Arrange
+    void crearTareaParaUsuario_asignaCreatedByTimestampsYGuarda() {
         Tarea tarea = tareaBase();
         Tarea guardada = tareaBase();
         guardada.setId(1L);
         when(tareaRepository.save(eq(tarea), anyList())).thenReturn(guardada);
 
-        // Act
-        Tarea resultado = service.crear(tarea, List.of());
+        Tarea resultado = service.crearTareaParaUsuario(tarea, List.of(), USER_ID);
 
-        // Assert
+        assertThat(tarea.getCreatedBy()).isEqualTo(USER_ID);
         assertThat(tarea.getCreatedAt()).isNotNull();
         assertThat(tarea.getUpdatedAt()).isNotNull();
         assertThat(resultado.getId()).isEqualTo(1L);
         verify(tareaRepository).save(tarea, List.of());
     }
 
-    // --- actualizar ---
+    // --- actualizarTareaPropia ---
 
     @Test
-    void actualizar_conIdExistente_asignaIdYUpdatedAtYGuarda() {
-        // Arrange
+    void actualizarTareaPropia_conIdExistente_asignaIdYUpdatedAtYGuarda() {
         Tarea existente = tareaBase();
         existente.setId(1L);
         Tarea nueva = tareaBase();
@@ -219,38 +176,47 @@ class TareaServiceTest {
         Tarea guardada = tareaBase();
         guardada.setId(1L);
         guardada.setTitulo("Actualizado");
-        when(tareaRepository.findById(1L)).thenReturn(Optional.of(existente));
+        when(tareaRepository.findByIdAndCreatedBy(1L, USER_ID)).thenReturn(Optional.of(existente));
         when(tareaRepository.save(eq(nueva), anyList())).thenReturn(guardada);
 
-        // Act
-        Tarea resultado = service.actualizar(1L, nueva, List.of());
+        Tarea resultado = service.actualizarTareaPropia(1L, nueva, List.of(), USER_ID);
 
-        // Assert
         assertThat(nueva.getId()).isEqualTo(1L);
+        assertThat(nueva.getCreatedBy()).isEqualTo(USER_ID);
         assertThat(nueva.getUpdatedAt()).isNotNull();
         assertThat(resultado.getTitulo()).isEqualTo("Actualizado");
     }
 
     @Test
-    void actualizar_conIdInexistente_lanzaExcepcionSinGuardar() {
-        // Arrange
-        when(tareaRepository.findById(99L)).thenReturn(Optional.empty());
+    void actualizarTareaPropia_conRecursoAjeno_lanzaNotFoundExceptionSinGuardar() {
+        when(tareaRepository.findByIdAndCreatedBy(1L, OTRO_USER_ID)).thenReturn(Optional.empty());
 
-        // Act + Assert
-        assertThatThrownBy(() -> service.actualizar(99L, tareaBase(), List.of()))
+        assertThatThrownBy(() -> service.actualizarTareaPropia(1L, tareaBase(), List.of(), OTRO_USER_ID))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("Tarea no encontrada");
         verify(tareaRepository, never()).save(any(), any());
     }
 
-    // --- eliminar ---
+    // --- eliminarTareaPropia ---
 
     @Test
-    void eliminar_delegaAlRepositorio() {
-        // Act
-        service.eliminar(1L);
+    void eliminarTareaPropia_conIdPropio_delegaAlRepositorio() {
+        Tarea existente = tareaBase();
+        existente.setId(1L);
+        when(tareaRepository.findByIdAndCreatedBy(1L, USER_ID)).thenReturn(Optional.of(existente));
 
-        // Assert
+        service.eliminarTareaPropia(1L, USER_ID);
+
         verify(tareaRepository).deleteById(1L);
+    }
+
+    @Test
+    void eliminarTareaPropia_conRecursoAjeno_lanzaNotFoundExceptionSinEliminar() {
+        when(tareaRepository.findByIdAndCreatedBy(1L, OTRO_USER_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.eliminarTareaPropia(1L, OTRO_USER_ID))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("Tarea no encontrada");
+        verify(tareaRepository, never()).deleteById(any());
     }
 }

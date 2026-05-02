@@ -25,13 +25,14 @@ public class JournalRepositoryAdapter implements JournalRepositoryPort {
     }
 
     @Override
-    public List<JournalEntry> findAll() {
-        return jpaRepository.findAll().stream().map(JournalJpaEntity::toDomain).collect(Collectors.toList());
+    public List<JournalEntry> findAllByCreatedBy(Long userId) {
+        return jpaRepository.findAllByCreatedByOrderByFechaReferenciaDesc(userId).stream()
+                .map(JournalJpaEntity::toDomain).collect(Collectors.toList());
     }
 
     @Override
-    public Optional<JournalEntry> findById(Long id) {
-        return jpaRepository.findById(id).map(JournalJpaEntity::toDomain);
+    public Optional<JournalEntry> findByIdAndCreatedBy(Long id, Long userId) {
+        return jpaRepository.findByIdAndCreatedBy(id, userId).map(JournalJpaEntity::toDomain);
     }
 
     @Override
@@ -47,7 +48,7 @@ public class JournalRepositoryAdapter implements JournalRepositoryPort {
         entity.setUpdatedAt(entry.getUpdatedAt());
 
         if (etiquetaIds != null && !etiquetaIds.isEmpty()) {
-            List<EtiquetaJpaEntity> etiquetas = etiquetaJpaRepository.findByIdIn(etiquetaIds);
+            List<EtiquetaJpaEntity> etiquetas = etiquetaJpaRepository.findByIdInAndCreatedBy(etiquetaIds, entry.getCreatedBy());
             entity.setEtiquetas(etiquetas);
         }
 
@@ -60,7 +61,8 @@ public class JournalRepositoryAdapter implements JournalRepositoryPort {
     }
 
     @Override
-    public List<JournalEntry> searchByTexto(String texto) {
-        return jpaRepository.searchByTexto(texto).stream().map(JournalJpaEntity::toDomain).collect(Collectors.toList());
+    public List<JournalEntry> searchByTextoAndCreatedBy(String texto, Long userId) {
+        return jpaRepository.searchByTextoAndCreatedBy(texto, userId).stream()
+                .map(JournalJpaEntity::toDomain).collect(Collectors.toList());
     }
 }

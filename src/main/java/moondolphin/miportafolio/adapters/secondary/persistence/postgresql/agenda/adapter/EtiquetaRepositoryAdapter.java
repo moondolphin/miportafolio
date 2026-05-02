@@ -20,18 +20,20 @@ public class EtiquetaRepositoryAdapter implements EtiquetaRepositoryPort {
     }
 
     @Override
-    public List<Etiqueta> findAll() {
-        return jpaRepository.findAll().stream().map(EtiquetaJpaEntity::toDomain).collect(Collectors.toList());
+    public List<Etiqueta> findAllByCreatedBy(Long userId) {
+        return jpaRepository.findAllByCreatedByOrderByNombreAsc(userId).stream()
+                .map(EtiquetaJpaEntity::toDomain).collect(Collectors.toList());
     }
 
     @Override
-    public Optional<Etiqueta> findById(Long id) {
-        return jpaRepository.findById(id).map(EtiquetaJpaEntity::toDomain);
+    public Optional<Etiqueta> findByIdAndCreatedBy(Long id, Long userId) {
+        return jpaRepository.findByIdAndCreatedBy(id, userId).map(EtiquetaJpaEntity::toDomain);
     }
 
     @Override
-    public List<Etiqueta> findByIds(List<Long> ids) {
-        return jpaRepository.findByIdIn(ids).stream().map(EtiquetaJpaEntity::toDomain).collect(Collectors.toList());
+    public List<Etiqueta> findByIdsAndCreatedBy(List<Long> ids, Long userId) {
+        return jpaRepository.findByIdInAndCreatedBy(ids, userId).stream()
+                .map(EtiquetaJpaEntity::toDomain).collect(Collectors.toList());
     }
 
     @Override

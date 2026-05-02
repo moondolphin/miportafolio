@@ -20,33 +20,37 @@ public class NotaService implements NotaServicePort {
     }
 
     @Override
-    public List<NotaLibre> obtenerTodas() {
-        return notaRepository.findAll();
+    public List<NotaLibre> obtenerNotasDelUsuario(Long userId) {
+        return notaRepository.findAllByCreatedBy(userId);
     }
 
     @Override
-    public Optional<NotaLibre> obtenerPorId(Long id) {
-        return notaRepository.findById(id);
+    public Optional<NotaLibre> obtenerNotaPropiaPorId(Long id, Long userId) {
+        return notaRepository.findByIdAndCreatedBy(id, userId);
     }
 
     @Override
-    public NotaLibre crear(NotaLibre nota, List<Long> etiquetaIds) {
+    public NotaLibre crearNotaParaUsuario(NotaLibre nota, List<Long> etiquetaIds, Long userId) {
+        nota.setCreatedBy(userId);
         nota.setCreatedAt(LocalDateTime.now());
         nota.setUpdatedAt(LocalDateTime.now());
         return notaRepository.save(nota, etiquetaIds);
     }
 
     @Override
-    public NotaLibre actualizar(Long id, NotaLibre nota, List<Long> etiquetaIds) {
-        notaRepository.findById(id)
+    public NotaLibre actualizarNotaPropia(Long id, NotaLibre nota, List<Long> etiquetaIds, Long userId) {
+        notaRepository.findByIdAndCreatedBy(id, userId)
                 .orElseThrow(() -> new NotFoundException("Nota no encontrada"));
         nota.setId(id);
+        nota.setCreatedBy(userId);
         nota.setUpdatedAt(LocalDateTime.now());
         return notaRepository.save(nota, etiquetaIds);
     }
 
     @Override
-    public void eliminar(Long id) {
+    public void eliminarNotaPropia(Long id, Long userId) {
+        notaRepository.findByIdAndCreatedBy(id, userId)
+                .orElseThrow(() -> new NotFoundException("Nota no encontrada"));
         notaRepository.deleteById(id);
     }
 }

@@ -25,128 +25,127 @@ class RecordatorioServiceTest {
 
     private RecordatorioService service;
 
+    private static final Long USER_ID = 1L;
+    private static final Long OTRO_USER_ID = 2L;
+
     @BeforeEach
     void setUp() {
         service = new RecordatorioService(recordatorioRepository);
     }
 
-    // --- obtenerTodos ---
+    // --- obtenerRecordatoriosDelUsuario ---
 
     @Test
-    void obtenerTodos_retornaTodosLosRecordatorios() {
-        // Arrange
+    void obtenerRecordatoriosDelUsuario_soloRetornaRecordatoriosPropios() {
         List<Recordatorio> recordatorios = List.of(new Recordatorio(), new Recordatorio());
-        when(recordatorioRepository.findAll()).thenReturn(recordatorios);
+        when(recordatorioRepository.findAllByCreatedBy(USER_ID)).thenReturn(recordatorios);
 
-        // Act
-        List<Recordatorio> resultado = service.obtenerTodos();
+        List<Recordatorio> resultado = service.obtenerRecordatoriosDelUsuario(USER_ID);
 
-        // Assert
         assertThat(resultado).hasSize(2);
-        verify(recordatorioRepository).findAll();
+        verify(recordatorioRepository).findAllByCreatedBy(USER_ID);
+        verify(recordatorioRepository, never()).findAllByCreatedBy(OTRO_USER_ID);
     }
 
     @Test
-    void obtenerTodos_conListaVacia_retornaListaVacia() {
-        // Arrange
-        when(recordatorioRepository.findAll()).thenReturn(List.of());
+    void obtenerRecordatoriosDelUsuario_conListaVacia_retornaListaVacia() {
+        when(recordatorioRepository.findAllByCreatedBy(USER_ID)).thenReturn(List.of());
 
-        // Act + Assert
-        assertThat(service.obtenerTodos()).isEmpty();
+        assertThat(service.obtenerRecordatoriosDelUsuario(USER_ID)).isEmpty();
     }
 
-    // --- obtenerPorId ---
+    // --- obtenerRecordatorioPropioPorId ---
 
     @Test
-    void obtenerPorId_conIdExistente_retornaOptionalConRecordatorio() {
-        // Arrange
+    void obtenerRecordatorioPropioPorId_conIdExistente_retornaOptionalConRecordatorio() {
         Recordatorio recordatorio = new Recordatorio();
         recordatorio.setId(1L);
-        when(recordatorioRepository.findById(1L)).thenReturn(Optional.of(recordatorio));
+        when(recordatorioRepository.findByIdAndCreatedBy(1L, USER_ID)).thenReturn(Optional.of(recordatorio));
 
-        // Act
-        Optional<Recordatorio> resultado = service.obtenerPorId(1L);
+        Optional<Recordatorio> resultado = service.obtenerRecordatorioPropioPorId(1L, USER_ID);
 
-        // Assert
         assertThat(resultado).isPresent();
         assertThat(resultado.get().getId()).isEqualTo(1L);
     }
 
     @Test
-    void obtenerPorId_conIdInexistente_retornaOptionalVacio() {
-        // Arrange
-        when(recordatorioRepository.findById(99L)).thenReturn(Optional.empty());
+    void obtenerRecordatorioPropioPorId_conIdInexistente_retornaOptionalVacio() {
+        when(recordatorioRepository.findByIdAndCreatedBy(99L, USER_ID)).thenReturn(Optional.empty());
 
-        // Act
-        Optional<Recordatorio> resultado = service.obtenerPorId(99L);
+        Optional<Recordatorio> resultado = service.obtenerRecordatorioPropioPorId(99L, USER_ID);
 
-        // Assert
         assertThat(resultado).isEmpty();
     }
 
-    // --- crear ---
+    // --- crearRecordatorioParaUsuario ---
 
     @Test
-    void crear_asignaTimestampsYGuarda() {
-        // Arrange
+    void crearRecordatorioParaUsuario_asignaCreatedByTimestampsYGuarda() {
         Recordatorio recordatorio = new Recordatorio();
         recordatorio.setTitulo("Tomar medicamento");
         Recordatorio guardado = new Recordatorio();
         guardado.setId(1L);
         when(recordatorioRepository.save(eq(recordatorio), anyList())).thenReturn(guardado);
 
-        // Act
-        Recordatorio resultado = service.crear(recordatorio, List.of());
+        Recordatorio resultado = service.crearRecordatorioParaUsuario(recordatorio, List.of(), USER_ID);
 
-        // Assert
+        assertThat(recordatorio.getCreatedBy()).isEqualTo(USER_ID);
         assertThat(recordatorio.getCreatedAt()).isNotNull();
         assertThat(recordatorio.getUpdatedAt()).isNotNull();
         assertThat(resultado.getId()).isEqualTo(1L);
     }
 
-    // --- actualizar ---
+    // --- actualizarRecordatorioPropio ---
 
     @Test
-    void actualizar_conIdExistente_asignaIdYUpdatedAtYGuarda() {
-        // Arrange
+    void actualizarRecordatorioPropio_conIdExistente_asignaIdYUpdatedAtYGuarda() {
         Recordatorio existente = new Recordatorio();
         existente.setId(1L);
         Recordatorio nuevo = new Recordatorio();
         nuevo.setTitulo("Actualizado");
         Recordatorio guardado = new Recordatorio();
         guardado.setId(1L);
-        when(recordatorioRepository.findById(1L)).thenReturn(Optional.of(existente));
+        when(recordatorioRepository.findByIdAndCreatedBy(1L, USER_ID)).thenReturn(Optional.of(existente));
         when(recordatorioRepository.save(eq(nuevo), anyList())).thenReturn(guardado);
 
-        // Act
-        Recordatorio resultado = service.actualizar(1L, nuevo, List.of());
+        Recordatorio resultado = service.actualizarRecordatorioPropio(1L, nuevo, List.of(), USER_ID);
 
-        // Assert
         assertThat(nuevo.getId()).isEqualTo(1L);
+        assertThat(nuevo.getCreatedBy()).isEqualTo(USER_ID);
         assertThat(nuevo.getUpdatedAt()).isNotNull();
         assertThat(resultado.getId()).isEqualTo(1L);
     }
 
     @Test
-    void actualizar_conIdInexistente_lanzaExcepcionSinGuardar() {
-        // Arrange
-        when(recordatorioRepository.findById(99L)).thenReturn(Optional.empty());
+    void actualizarRecordatorioPropio_conRecursoAjeno_lanzaNotFoundExceptionSinGuardar() {
+        when(recordatorioRepository.findByIdAndCreatedBy(99L, OTRO_USER_ID)).thenReturn(Optional.empty());
 
-        // Act + Assert
-        assertThatThrownBy(() -> service.actualizar(99L, new Recordatorio(), List.of()))
+        assertThatThrownBy(() -> service.actualizarRecordatorioPropio(99L, new Recordatorio(), List.of(), OTRO_USER_ID))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("Recordatorio no encontrado");
         verify(recordatorioRepository, never()).save(any(), any());
     }
 
-    // --- eliminar ---
+    // --- eliminarRecordatorioPropio ---
 
     @Test
-    void eliminar_delegaAlRepositorio() {
-        // Act
-        service.eliminar(1L);
+    void eliminarRecordatorioPropio_conIdPropio_delegaAlRepositorio() {
+        Recordatorio existente = new Recordatorio();
+        existente.setId(1L);
+        when(recordatorioRepository.findByIdAndCreatedBy(1L, USER_ID)).thenReturn(Optional.of(existente));
 
-        // Assert
+        service.eliminarRecordatorioPropio(1L, USER_ID);
+
         verify(recordatorioRepository).deleteById(1L);
+    }
+
+    @Test
+    void eliminarRecordatorioPropio_conRecursoAjeno_lanzaNotFoundExceptionSinEliminar() {
+        when(recordatorioRepository.findByIdAndCreatedBy(1L, OTRO_USER_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.eliminarRecordatorioPropio(1L, OTRO_USER_ID))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("Recordatorio no encontrado");
+        verify(recordatorioRepository, never()).deleteById(any());
     }
 }

@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CollageServicePort {
-    List<CollageEntry> obtenerTodos();
-    Optional<CollageEntry> obtenerPorId(Long id);
-    CollageEntry crear(CollageEntry entry);
-    CollageEntry actualizar(Long id, CollageEntry entry);
-    void eliminar(Long id);
+    List<CollageEntry> obtenerCollageDelUsuario(Long userId);
+    Optional<CollageEntry> obtenerCollagePropioPorId(Long id, Long userId);
+    CollageEntry crearCollageParaUsuario(CollageEntry entry, Long userId);
+    CollageEntry actualizarCollagePropio(Long id, CollageEntry entry, Long userId);
+    void eliminarCollagePropio(Long id, Long userId);
 }

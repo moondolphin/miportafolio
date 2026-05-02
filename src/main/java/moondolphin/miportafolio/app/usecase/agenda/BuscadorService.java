@@ -26,12 +26,12 @@ public class BuscadorService implements BuscadorServicePort {
     }
 
     @Override
-    public Resultado buscar(String texto) {
+    public Resultado buscarEnAgendaDelUsuario(String texto, Long userId) {
         return new Resultado(
-                tareaRepository.searchByTexto(texto),
-                notaRepository.searchByTexto(texto),
-                journalRepository.searchByTexto(texto),
-                linkRepository.searchByTexto(texto)
+                tareaRepository.searchByTextoAndCreatedBy(texto, userId),
+                notaRepository.searchByTextoAndCreatedBy(texto, userId),
+                journalRepository.searchByTextoAndCreatedBy(texto, userId),
+                linkRepository.searchByTextoAndCreatedBy(texto, userId)
         );
     }
 }

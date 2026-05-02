@@ -22,13 +22,14 @@ public class JournalHandler {
     }
 
     @GetMapping
-    public List<JournalEntry> listar() {
-        return journalService.obtenerTodas();
+    public List<JournalEntry> listar(@AuthenticationPrincipal AgendaUserDetails userDetails) {
+        return journalService.obtenerJournalDelUsuario(userDetails.getUserId());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<JournalEntry> obtener(@PathVariable Long id) {
-        return journalService.obtenerPorId(id)
+    public ResponseEntity<JournalEntry> obtener(@PathVariable Long id,
+                                                @AuthenticationPrincipal AgendaUserDetails userDetails) {
+        return journalService.obtenerEntradaJournalPropiaPorId(id, userDetails.getUserId())
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> new NotFoundException("Entrada de journal no encontrada"));
     }
@@ -41,8 +42,7 @@ public class JournalHandler {
         entry.setContenido(request.getContenido());
         entry.setMoodId(request.getMoodId());
         entry.setFechaReferencia(request.getFechaReferencia());
-        entry.setCreatedBy(userDetails.getUserId());
-        return journalService.crear(entry, request.getEtiquetaIds());
+        return journalService.crearEntradaJournalParaUsuario(entry, request.getEtiquetaIds(), userDetails.getUserId());
     }
 
     @PutMapping("/{id}")
@@ -54,13 +54,13 @@ public class JournalHandler {
         entry.setContenido(request.getContenido());
         entry.setMoodId(request.getMoodId());
         entry.setFechaReferencia(request.getFechaReferencia());
-        entry.setCreatedBy(userDetails.getUserId());
-        return journalService.actualizar(id, entry, request.getEtiquetaIds());
+        return journalService.actualizarEntradaJournalPropia(id, entry, request.getEtiquetaIds(), userDetails.getUserId());
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        journalService.eliminar(id);
+    public ResponseEntity<Void> eliminar(@PathVariable Long id,
+                                         @AuthenticationPrincipal AgendaUserDetails userDetails) {
+        journalService.eliminarEntradaJournalPropia(id, userDetails.getUserId());
         return ResponseEntity.noContent().build();
     }
 }

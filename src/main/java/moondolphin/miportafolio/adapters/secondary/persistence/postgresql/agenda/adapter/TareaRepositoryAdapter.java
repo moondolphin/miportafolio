@@ -28,33 +28,38 @@ public class TareaRepositoryAdapter implements TareaRepositoryPort {
     }
 
     @Override
-    public List<Tarea> findAll() {
-        return jpaRepository.findAll().stream().map(TareaJpaEntity::toDomain).collect(Collectors.toList());
+    public List<Tarea> findAllByCreatedBy(Long userId) {
+        return jpaRepository.findAllByCreatedByOrderByFechaDesc(userId).stream()
+                .map(TareaJpaEntity::toDomain).collect(Collectors.toList());
     }
 
     @Override
-    public List<Tarea> findByFecha(LocalDate fecha) {
-        return jpaRepository.findByFecha(fecha).stream().map(TareaJpaEntity::toDomain).collect(Collectors.toList());
+    public List<Tarea> findByFechaAndCreatedBy(LocalDate fecha, Long userId) {
+        return jpaRepository.findByFechaAndCreatedBy(fecha, userId).stream()
+                .map(TareaJpaEntity::toDomain).collect(Collectors.toList());
     }
 
     @Override
-    public List<Tarea> findByPrioridad(Prioridad prioridad) {
-        return jpaRepository.findByPrioridad(prioridad).stream().map(TareaJpaEntity::toDomain).collect(Collectors.toList());
+    public List<Tarea> findByPrioridadAndCreatedBy(Prioridad prioridad, Long userId) {
+        return jpaRepository.findByPrioridadAndCreatedBy(prioridad, userId).stream()
+                .map(TareaJpaEntity::toDomain).collect(Collectors.toList());
     }
 
     @Override
-    public List<Tarea> findByEstado(EstadoTarea estado) {
-        return jpaRepository.findByEstado(estado).stream().map(TareaJpaEntity::toDomain).collect(Collectors.toList());
+    public List<Tarea> findByEstadoAndCreatedBy(EstadoTarea estado, Long userId) {
+        return jpaRepository.findByEstadoAndCreatedBy(estado, userId).stream()
+                .map(TareaJpaEntity::toDomain).collect(Collectors.toList());
     }
 
     @Override
-    public List<Tarea> findByEtiquetaNombre(String nombre) {
-        return jpaRepository.findByEtiquetaNombre(nombre).stream().map(TareaJpaEntity::toDomain).collect(Collectors.toList());
+    public List<Tarea> findByEtiquetaNombreAndCreatedBy(String nombre, Long userId) {
+        return jpaRepository.findByEtiquetaNombreAndCreatedBy(nombre, userId).stream()
+                .map(TareaJpaEntity::toDomain).collect(Collectors.toList());
     }
 
     @Override
-    public Optional<Tarea> findById(Long id) {
-        return jpaRepository.findById(id).map(TareaJpaEntity::toDomain);
+    public Optional<Tarea> findByIdAndCreatedBy(Long id, Long userId) {
+        return jpaRepository.findByIdAndCreatedBy(id, userId).map(TareaJpaEntity::toDomain);
     }
 
     @Override
@@ -73,7 +78,7 @@ public class TareaRepositoryAdapter implements TareaRepositoryPort {
         entity.setUpdatedAt(tarea.getUpdatedAt());
 
         if (etiquetaIds != null && !etiquetaIds.isEmpty()) {
-            List<EtiquetaJpaEntity> etiquetas = etiquetaJpaRepository.findByIdIn(etiquetaIds);
+            List<EtiquetaJpaEntity> etiquetas = etiquetaJpaRepository.findByIdInAndCreatedBy(etiquetaIds, tarea.getCreatedBy());
             entity.setEtiquetas(etiquetas);
         }
 
@@ -86,7 +91,8 @@ public class TareaRepositoryAdapter implements TareaRepositoryPort {
     }
 
     @Override
-    public List<Tarea> searchByTexto(String texto) {
-        return jpaRepository.searchByTexto(texto).stream().map(TareaJpaEntity::toDomain).collect(Collectors.toList());
+    public List<Tarea> searchByTextoAndCreatedBy(String texto, Long userId) {
+        return jpaRepository.searchByTextoAndCreatedBy(texto, userId).stream()
+                .map(TareaJpaEntity::toDomain).collect(Collectors.toList());
     }
 }

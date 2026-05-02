@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface MoodServicePort {
-    List<MoodEntry> obtenerTodos();
-    MoodEntry registrar(MoodEntry entry);
-    Map<EstadoAnimo, Long> obtenerEstadisticas();
+    List<MoodEntry> obtenerMoodsDelUsuario(Long userId);
+    MoodEntry registrarMoodParaUsuario(MoodEntry entry, Long userId);
+    Map<EstadoAnimo, Long> obtenerEstadisticasMoodDelUsuario(Long userId);
 }

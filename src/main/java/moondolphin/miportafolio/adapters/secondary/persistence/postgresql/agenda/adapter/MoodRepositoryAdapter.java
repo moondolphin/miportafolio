@@ -22,8 +22,9 @@ public class MoodRepositoryAdapter implements MoodRepositoryPort {
     }
 
     @Override
-    public List<MoodEntry> findAll() {
-        return jpaRepository.findAll().stream().map(MoodJpaEntity::toDomain).collect(Collectors.toList());
+    public List<MoodEntry> findAllByCreatedBy(Long userId) {
+        return jpaRepository.findAllByCreatedByOrderByFechaDesc(userId).stream()
+                .map(MoodJpaEntity::toDomain).collect(Collectors.toList());
     }
 
     @Override
@@ -32,9 +33,9 @@ public class MoodRepositoryAdapter implements MoodRepositoryPort {
     }
 
     @Override
-    public Map<EstadoAnimo, Long> countByEstadoAnimo() {
+    public Map<EstadoAnimo, Long> countByEstadoAnimoAndCreatedBy(Long userId) {
         Map<EstadoAnimo, Long> resultado = new HashMap<>();
-        for (Object[] row : jpaRepository.countGroupByEstadoAnimo()) {
+        for (Object[] row : jpaRepository.countGroupByEstadoAnimoAndCreatedBy(userId)) {
             resultado.put((EstadoAnimo) row[0], (Long) row[1]);
         }
         return resultado;

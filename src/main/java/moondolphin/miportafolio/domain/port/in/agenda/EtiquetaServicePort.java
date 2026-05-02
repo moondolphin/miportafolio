@@ -4,8 +4,8 @@ import moondolphin.miportafolio.domain.model.agenda.Etiqueta;
 import java.util.List;
 
 public interface EtiquetaServicePort {
-    List<Etiqueta> obtenerTodas();
-    Etiqueta crear(Etiqueta etiqueta);
-    Etiqueta actualizar(Long id, Etiqueta etiqueta);
-    void eliminar(Long id);
+    List<Etiqueta> obtenerEtiquetasDelUsuario(Long userId);
+    Etiqueta crearEtiquetaParaUsuario(Etiqueta etiqueta, Long userId);
+    Etiqueta actualizarEtiquetaPropia(Long id, Etiqueta etiqueta, Long userId);
+    void eliminarEtiquetaPropia(Long id, Long userId);
 }

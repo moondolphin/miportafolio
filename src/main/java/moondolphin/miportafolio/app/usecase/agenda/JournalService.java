@@ -20,33 +20,37 @@ public class JournalService implements JournalServicePort {
     }
 
     @Override
-    public List<JournalEntry> obtenerTodas() {
-        return journalRepository.findAll();
+    public List<JournalEntry> obtenerJournalDelUsuario(Long userId) {
+        return journalRepository.findAllByCreatedBy(userId);
     }
 
     @Override
-    public Optional<JournalEntry> obtenerPorId(Long id) {
-        return journalRepository.findById(id);
+    public Optional<JournalEntry> obtenerEntradaJournalPropiaPorId(Long id, Long userId) {
+        return journalRepository.findByIdAndCreatedBy(id, userId);
     }
 
     @Override
-    public JournalEntry crear(JournalEntry entry, List<Long> etiquetaIds) {
+    public JournalEntry crearEntradaJournalParaUsuario(JournalEntry entry, List<Long> etiquetaIds, Long userId) {
+        entry.setCreatedBy(userId);
         entry.setCreatedAt(LocalDateTime.now());
         entry.setUpdatedAt(LocalDateTime.now());
         return journalRepository.save(entry, etiquetaIds);
     }
 
     @Override
-    public JournalEntry actualizar(Long id, JournalEntry entry, List<Long> etiquetaIds) {
-        journalRepository.findById(id)
+    public JournalEntry actualizarEntradaJournalPropia(Long id, JournalEntry entry, List<Long> etiquetaIds, Long userId) {
+        journalRepository.findByIdAndCreatedBy(id, userId)
                 .orElseThrow(() -> new NotFoundException("Entrada de journal no encontrada"));
         entry.setId(id);
+        entry.setCreatedBy(userId);
         entry.setUpdatedAt(LocalDateTime.now());
         return journalRepository.save(entry, etiquetaIds);
     }
 
     @Override
-    public void eliminar(Long id) {
+    public void eliminarEntradaJournalPropia(Long id, Long userId) {
+        journalRepository.findByIdAndCreatedBy(id, userId)
+                .orElseThrow(() -> new NotFoundException("Entrada de journal no encontrada"));
         journalRepository.deleteById(id);
     }
 }

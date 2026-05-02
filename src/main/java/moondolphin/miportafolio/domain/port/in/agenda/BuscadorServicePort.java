@@ -7,7 +7,7 @@ import moondolphin.miportafolio.domain.model.agenda.Tarea;
 import java.util.List;
 
 public interface BuscadorServicePort {
-    BuscadorServicePort.Resultado buscar(String texto);
+    BuscadorServicePort.Resultado buscarEnAgendaDelUsuario(String texto, Long userId);
 
     class Resultado {
         private List<Tarea> tareas;

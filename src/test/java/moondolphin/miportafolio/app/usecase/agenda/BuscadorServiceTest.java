@@ -34,53 +34,66 @@ class BuscadorServiceTest {
 
     private BuscadorService service;
 
+    private static final Long USER_ID = 1L;
+    private static final Long OTRO_USER_ID = 2L;
+
     @BeforeEach
     void setUp() {
         service = new BuscadorService(tareaRepository, notaRepository, journalRepository, linkRepository);
     }
 
-    // --- buscar ---
+    // --- buscarEnAgendaDelUsuario ---
 
     @Test
-    void buscar_consultaTodosLosRepositoriosYAgregaResultados() {
-        // Arrange
+    void buscarEnAgendaDelUsuario_consultaTodosLosRepositoriosFiltradosPorUsuario() {
         String texto = "Java";
         List<Tarea> tareas = List.of(new Tarea());
         List<NotaLibre> notas = List.of(new NotaLibre(), new NotaLibre());
         List<JournalEntry> journal = List.of();
         List<LinkItem> links = List.of(new LinkItem());
-        when(tareaRepository.searchByTexto(texto)).thenReturn(tareas);
-        when(notaRepository.searchByTexto(texto)).thenReturn(notas);
-        when(journalRepository.searchByTexto(texto)).thenReturn(journal);
-        when(linkRepository.searchByTexto(texto)).thenReturn(links);
+        when(tareaRepository.searchByTextoAndCreatedBy(texto, USER_ID)).thenReturn(tareas);
+        when(notaRepository.searchByTextoAndCreatedBy(texto, USER_ID)).thenReturn(notas);
+        when(journalRepository.searchByTextoAndCreatedBy(texto, USER_ID)).thenReturn(journal);
+        when(linkRepository.searchByTextoAndCreatedBy(texto, USER_ID)).thenReturn(links);
 
-        // Act
-        BuscadorServicePort.Resultado resultado = service.buscar(texto);
+        BuscadorServicePort.Resultado resultado = service.buscarEnAgendaDelUsuario(texto, USER_ID);
 
-        // Assert
         assertThat(resultado.getTareas()).hasSize(1);
         assertThat(resultado.getNotas()).hasSize(2);
         assertThat(resultado.getJournal()).isEmpty();
         assertThat(resultado.getLinks()).hasSize(1);
-        verify(tareaRepository).searchByTexto(texto);
-        verify(notaRepository).searchByTexto(texto);
-        verify(journalRepository).searchByTexto(texto);
-        verify(linkRepository).searchByTexto(texto);
+        verify(tareaRepository).searchByTextoAndCreatedBy(texto, USER_ID);
+        verify(notaRepository).searchByTextoAndCreatedBy(texto, USER_ID);
+        verify(journalRepository).searchByTextoAndCreatedBy(texto, USER_ID);
+        verify(linkRepository).searchByTextoAndCreatedBy(texto, USER_ID);
     }
 
     @Test
-    void buscar_sinCoincidencias_retornaTodasLasListasVacias() {
-        // Arrange
+    void buscarEnAgendaDelUsuario_noDevuelveDatosDeOtrosUsuarios() {
+        String texto = "Java";
+        when(tareaRepository.searchByTextoAndCreatedBy(texto, USER_ID)).thenReturn(List.of(new Tarea()));
+        when(notaRepository.searchByTextoAndCreatedBy(texto, USER_ID)).thenReturn(List.of());
+        when(journalRepository.searchByTextoAndCreatedBy(texto, USER_ID)).thenReturn(List.of());
+        when(linkRepository.searchByTextoAndCreatedBy(texto, USER_ID)).thenReturn(List.of());
+
+        service.buscarEnAgendaDelUsuario(texto, USER_ID);
+
+        verify(tareaRepository, never()).searchByTextoAndCreatedBy(texto, OTRO_USER_ID);
+        verify(notaRepository, never()).searchByTextoAndCreatedBy(texto, OTRO_USER_ID);
+        verify(journalRepository, never()).searchByTextoAndCreatedBy(texto, OTRO_USER_ID);
+        verify(linkRepository, never()).searchByTextoAndCreatedBy(texto, OTRO_USER_ID);
+    }
+
+    @Test
+    void buscarEnAgendaDelUsuario_sinCoincidencias_retornaTodasLasListasVacias() {
         String texto = "xyzabc123";
-        when(tareaRepository.searchByTexto(texto)).thenReturn(List.of());
-        when(notaRepository.searchByTexto(texto)).thenReturn(List.of());
-        when(journalRepository.searchByTexto(texto)).thenReturn(List.of());
-        when(linkRepository.searchByTexto(texto)).thenReturn(List.of());
+        when(tareaRepository.searchByTextoAndCreatedBy(texto, USER_ID)).thenReturn(List.of());
+        when(notaRepository.searchByTextoAndCreatedBy(texto, USER_ID)).thenReturn(List.of());
+        when(journalRepository.searchByTextoAndCreatedBy(texto, USER_ID)).thenReturn(List.of());
+        when(linkRepository.searchByTextoAndCreatedBy(texto, USER_ID)).thenReturn(List.of());
 
-        // Act
-        BuscadorServicePort.Resultado resultado = service.buscar(texto);
+        BuscadorServicePort.Resultado resultado = service.buscarEnAgendaDelUsuario(texto, USER_ID);
 
-        // Assert
         assertThat(resultado.getTareas()).isEmpty();
         assertThat(resultado.getNotas()).isEmpty();
         assertThat(resultado.getJournal()).isEmpty();
@@ -88,21 +101,18 @@ class BuscadorServiceTest {
     }
 
     @Test
-    void buscar_conTextoVacio_consultaRepositoriosIgualmente() {
-        // Arrange — texto vacío es un caso válido; la responsabilidad de filtrar es del repositorio
+    void buscarEnAgendaDelUsuario_conTextoVacio_consultaRepositoriosIgualmente() {
         String texto = "";
-        when(tareaRepository.searchByTexto(texto)).thenReturn(List.of());
-        when(notaRepository.searchByTexto(texto)).thenReturn(List.of());
-        when(journalRepository.searchByTexto(texto)).thenReturn(List.of());
-        when(linkRepository.searchByTexto(texto)).thenReturn(List.of());
+        when(tareaRepository.searchByTextoAndCreatedBy(texto, USER_ID)).thenReturn(List.of());
+        when(notaRepository.searchByTextoAndCreatedBy(texto, USER_ID)).thenReturn(List.of());
+        when(journalRepository.searchByTextoAndCreatedBy(texto, USER_ID)).thenReturn(List.of());
+        when(linkRepository.searchByTextoAndCreatedBy(texto, USER_ID)).thenReturn(List.of());
 
-        // Act
-        service.buscar(texto);
+        service.buscarEnAgendaDelUsuario(texto, USER_ID);
 
-        // Assert — los 4 repositorios deben ser invocados independientemente del texto
-        verify(tareaRepository).searchByTexto(texto);
-        verify(notaRepository).searchByTexto(texto);
-        verify(journalRepository).searchByTexto(texto);
-        verify(linkRepository).searchByTexto(texto);
+        verify(tareaRepository).searchByTextoAndCreatedBy(texto, USER_ID);
+        verify(notaRepository).searchByTextoAndCreatedBy(texto, USER_ID);
+        verify(journalRepository).searchByTextoAndCreatedBy(texto, USER_ID);
+        verify(linkRepository).searchByTextoAndCreatedBy(texto, USER_ID);
     }
 }
