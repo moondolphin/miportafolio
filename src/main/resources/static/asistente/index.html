@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Consultorio Los Tilos | Asistente</title>
+    <link rel="stylesheet" href="asistente.css">
+    <script src="asistente.js" defer></script>
+</head>
+<body>
+    <main>
+        <p class="eyebrow">Demo académica</p>
+        <h1>Consultorio Los Tilos</h1>
+        <p>Consultá sobre turnos disponibles, horarios de atención, servicios y políticas del consultorio. Usá datos ficticios para probar la demo.</p>
+        <section aria-label="Conversación" id="conversation" role="log" aria-live="polite"></section>
+        <form id="chat">
+            <label for="message">Tu consulta</label>
+            <textarea id="message" rows="2" maxlength="1000" required placeholder="¿Qué turnos tienen disponibles?"></textarea>
+            <button type="submit">Enviar</button>
+        </form>
+        <form id="booking" hidden>
+            <h2>Solicitud de turno</h2>
+            <p>Enviaremos estos datos a recepción del consultorio ficticio para gestionar tu solicitud.
+                El turno queda sujeto a confirmación por recepción.</p>
+            <label for="slot">Horario solicitado · Buenos Aires</label>
+            <select id="slot" required></select>
+            <label for="name">Nombre</label>
+            <input id="name" maxlength="120" autocomplete="off" required>
+            <label for="email">Correo electrónico</label>
+            <input id="email" type="email" maxlength="254" autocomplete="off" required>
+            <label for="reason">Motivo general</label>
+            <textarea id="reason" rows="2" maxlength="500" required></textarea>
+            <button type="submit">Revisar solicitud</button>
+        </form>
+        <section id="review" aria-live="polite" hidden>
+            <h2>Resumen de la solicitud</h2>
+            <p id="summary"></p>
+            <p id="booking-status"></p>
+            <p id="receipt"></p>
+            <button id="confirm" type="button">Confirmar y enviar solicitud</button>
+            <p>El intento se conserva durante esta sesión, hasta 30 minutos de inactividad.
+                Si la sesión vence o el servidor se reinicia, se pierde la recuperación del comprobante.
+                Guardá el comprobante cuando aparezca.</p>
+        </section>
+        <button id="close-session" class="secondary" type="button">Finalizar sesión</button>
+    </main>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "version": "1.0",
+  "sourceId": "INST-01",
+  "sourceRule": "El Consultorio Odontológico Los Tilos atiende de lunes a viernes de 9:00 a 18:00, hora de Argentina. Los sábados, domingos y feriados permanece cerrado.",
+  "zone": "America/Argentina/Buenos_Aires",
+  "days": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "opens": "09:00",
+  "closes": "18:00",
+  "closedDates": [],
+  "calendarResponsibility": "PostgreSQL cierres_institucionales contiene feriados/cierres aprobados; n8n debe excluirlos. Esta proyección valida además días y franjas recurrentes. No presume un calendario de feriados completo."
+}

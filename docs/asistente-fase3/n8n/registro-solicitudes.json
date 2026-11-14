@@ -1,0 +1,309 @@
+{
+  "name": "Los Tilos - registrar y consultar solicitudes",
+  "nodes": [
+    {
+      "id": "registro-webhook",
+      "name": "Registro POST",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "los-tilos/solicitudes-turno",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "registro-validar",
+      "name": "Validar datos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        230,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const input = $json.body;\nconst invalid = () => [{ json: { valid: false } }];\nif (!input || typeof input !== 'object' || Array.isArray(input)) return invalid();\nconst operation = input.operacion ?? 'registrar';\nif (!['registrar', 'consultar'].includes(operation)) return invalid();\nconst keys = operation === 'registrar'\n    ? ['horario_id', 'nombre', 'correo', 'motivo', 'clave_idempotencia', 'comprobante_hash']\n    : ['clave_idempotencia', 'correo', 'comprobante_hash'];\nif (keys.some(key => typeof input[key] !== 'string')) return invalid();\nconst payload = Object.fromEntries(keys.map(key => [key, input[key].trim()]));\nif (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(payload.clave_idempotencia)\n    || !/^[0-9a-f]{64}$/.test(payload.comprobante_hash)\n    || payload.correo.length > 254\n    || !/^[^\\s@]+@[^\\s@]+[.][^\\s@]+$/.test(payload.correo)) return invalid();\nif (operation === 'registrar'\n    && (!/^[1-9][0-9]{0,18}$/.test(payload.horario_id)\n        || BigInt(payload.horario_id) > 9223372036854775807n\n        || !payload.nombre || payload.nombre.length > 120\n        || !payload.motivo || payload.motivo.length > 500)) return invalid();\nreturn [{ json: { valid: true, operacion: operation, payload } }];"
+      }
+    },
+    {
+      "id": "registro-if",
+      "name": "Datos validos",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        460,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "valid-body",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "registro-pg",
+      "name": "Registrar en PostgreSQL",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        690,
+        -100
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT los_tilos.registrar_solicitud_turno(\n    $1::bigint, $2::text, $3::text, $4::text, $5::uuid, $6::text\n) AS respuesta;",
+        "options": {
+          "queryReplacement": "={{ [ $json.payload.horario_id, $json.payload.nombre, $json.payload.correo, $json.payload.motivo, $json.payload.clave_idempotencia, $json.payload.comprobante_hash ] }}"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "registro-answer",
+      "name": "Responder resultado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        930,
+        -150
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.respuesta }}",
+        "options": {
+          "responseCode": "={{ ({ registrada: 201, ya_registrada: 200, datos_invalidos: 400, horario_no_disponible: 409, conflicto_idempotencia: 409 })[$json.respuesta.resultado] || 500 }}"
+        }
+      }
+    },
+    {
+      "id": "registro-invalid",
+      "name": "Responder datos invalidos",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        690,
+        160
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"resultado\":\"datos_invalidos\"}",
+        "options": {
+          "responseCode": 400
+        }
+      }
+    },
+    {
+      "id": "registro-error",
+      "name": "Responder error interno",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        930,
+        40
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"resultado\":\"error_interno\"}",
+        "options": {
+          "responseCode": 500
+        }
+      }
+    },
+    {
+      "id": "consulta-if",
+      "name": "Es consulta",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        680,
+        -20
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "operation-consult",
+              "leftValue": "={{ $json.operacion }}",
+              "rightValue": "consultar",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "consulta-pg",
+      "name": "Consultar en PostgreSQL",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        900,
+        -300
+      ],
+      "onError": "continueErrorOutput",
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT los_tilos.consultar_solicitud_turno($1::uuid, $2::text, $3::text) AS respuesta;",
+        "options": {
+          "queryReplacement": "={{ [ $json.payload.clave_idempotencia, $json.payload.correo, $json.payload.comprobante_hash ] }}"
+        }
+      }
+    },
+    {
+      "id": "consulta-response",
+      "name": "Responder consulta",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1120,
+        -300
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.respuesta }}",
+        "options": {
+          "responseCode": "={{ $json.respuesta.resultado === 'encontrada' ? 200 : 404 }}"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Registro POST": {
+      "main": [
+        [
+          {
+            "node": "Validar datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar datos": {
+      "main": [
+        [
+          {
+            "node": "Datos validos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Datos validos": {
+      "main": [
+        [
+          {
+            "node": "Es consulta",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder datos invalidos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar en PostgreSQL": {
+      "main": [
+        [
+          {
+            "node": "Responder resultado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder error interno",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es consulta": {
+      "main": [
+        [
+          {
+            "node": "Consultar en PostgreSQL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar en PostgreSQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar en PostgreSQL": {
+      "main": [
+        [
+          {
+            "node": "Responder consulta",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder error interno",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false
+  }
+}
