@@ -1,29 +1,47 @@
 const form = document.querySelector("#chat");
 const input = document.querySelector("#message");
 const conversation = document.querySelector("#conversation");
-const bookingForm = document.querySelector("#booking");
-const slotSelect = document.querySelector("#slot");
 const review = document.querySelector("#review");
-const confirmButton = document.querySelector("#confirm");
-let currentAttempt = null;
+const thinking = document.querySelector("#thinking");
+const sendButton = document.querySelector("#send");
+const closeButton = document.querySelector("#close-session");
+const downloadButton = document.querySelector("#download-receipt");
+const emptyTemplate = document.querySelector("#empty-conversation");
+let currentReceipt = null;
 let busy = false;
 
+function showEmptyConversation() {
+    conversation.replaceChildren(emptyTemplate.content.cloneNode(true));
+}
+
 function appendMessage(label, text, retrieved, isError = false, tools = []) {
+    conversation.querySelector(".empty-conversation")?.remove();
     const entry = document.createElement("article");
     const author = document.createElement("strong");
+    const content = document.createElement("p");
     author.textContent = label;
-    entry.append(author, document.createTextNode("\n" + text));
+    content.textContent = text;
+    entry.append(author, content);
     entry.classList.toggle("error", isError);
-    if (retrieved) {
-        const source = document.createElement("small");
-        source.textContent = "Fragmento recuperado: " + retrieved.id + " · v" + retrieved.version;
-        entry.append(source);
-    }
-    for (const tool of tools) {
-        const source = document.createElement("small");
-        source.textContent = tool.herramienta + " · " + tool.consultadaEn
-            + (tool.exito ? " · consulta completada" : " · operación no completada");
-        entry.append(source);
+    entry.classList.toggle("user-message", label === "Vos");
+    if (retrieved || tools.length) {
+        const sources = document.createElement("details");
+        sources.className = "message-sources";
+        const title = document.createElement("summary");
+        title.textContent = "Fuentes y consultas";
+        sources.append(title);
+        if (retrieved) {
+            const source = document.createElement("small");
+            source.textContent = "Fragmento recuperado: " + retrieved.id + " · v" + retrieved.version;
+            sources.append(source);
+        }
+        for (const tool of tools) {
+            const source = document.createElement("small");
+            source.textContent = tool.herramienta + " · " + tool.consultadaEn
+                + (tool.exito ? " · consulta completada" : " · operación no completada");
+            sources.append(source);
+        }
+        entry.append(sources);
     }
     conversation.append(entry);
     conversation.scrollTop = conversation.scrollHeight;
@@ -39,152 +57,112 @@ async function call(path, body) {
     const response = await fetch("../api/v1/public/assistant/" + path, options);
     const text = await response.text();
     const result = text ? JSON.parse(text) : null;
-    if (!response.ok) {
-        throw new Error(result?.error || "El servidor no pudo procesar la consulta.");
-    }
+    if (!response.ok) throw new Error(result?.error || "El servidor no pudo procesar la consulta.");
     return result;
 }
 
 function showAttempt(attempt) {
-    currentAttempt = attempt;
-    review.hidden = !attempt;
-    if (!attempt) {
-        document.querySelector("#summary").textContent = "";
-        document.querySelector("#booking-status").textContent = "";
-        document.querySelector("#receipt").textContent = "";
-        confirmButton.hidden = true;
-        return;
-    }
-
-    const data = attempt.details;
-    document.querySelector("#name").value = data.nombre;
-    document.querySelector("#email").value = data.correo;
-    document.querySelector("#reason").value = data.motivo;
-    slotSelect.value = data.horarioId;
-    document.querySelector("#summary").textContent =
-        attempt.horario + "\n" + data.nombre + "\n" + data.correo + "\nMotivo: " + data.motivo;
-    document.querySelector("#booking-status").textContent = attempt.message;
-    document.querySelector("#receipt").textContent = attempt.comprobante
-        ? "Solicitud: " + attempt.solicitudId + "\nEstado: " + attempt.estado
-          + "\nComprobante: " + attempt.comprobante
-        : "";
-    confirmButton.hidden = !["resumen", "indeterminado"].includes(attempt.stage);
-    confirmButton.textContent = attempt.stage === "indeterminado"
-        ? "Verificar o reintentar" : "Confirmar y enviar solicitud";
-    bookingForm.hidden = slotSelect.options.length === 0
-        || (attempt.stage !== "resumen" && attempt.stage !== "rechazada");
-    review.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    // A prepared summary or an uncertain send is not proof of registration.
+    const registered = attempt?.stage === "registrada" && attempt.solicitudId && attempt.comprobante && attempt.details;
+    currentReceipt = registered ? attempt : null;
+    review.hidden = !registered;
+    downloadButton.disabled = !registered;
+    const fields = {
+        "receipt-slot": registered ? attempt.horario : "",
+        "receipt-name": registered ? attempt.details.nombre : "",
+        "receipt-email": registered ? attempt.details.correo : "",
+        "receipt-reason": registered ? attempt.details.motivo : "",
+        "receipt-id": registered ? attempt.solicitudId : "",
+        "receipt-token": registered ? attempt.comprobante : "",
+        "booking-status": registered ? attempt.message : ""
+    };
+    for (const [id, value] of Object.entries(fields)) document.getElementById(id).textContent = value || "";
+    const state = document.querySelector("#receipt-state");
+    state.textContent = registered ? ({ pendiente: "Pendiente de recepción", confirmada: "Confirmada", cancelada: "Cancelada" }[attempt.estado] || attempt.estado) : "";
+    state.dataset.state = registered ? attempt.estado : "";
+    if (!registered) document.querySelector(".receipt-code").open = false;
 }
 
-function showConversation(context) {
-    if (!context) return;
-    slotSelect.replaceChildren();
-    for (const slot of context.horarios) {
-        const option = document.createElement("option");
-        option.value = slot.id;
-        option.textContent = slot.label;
-        slotSelect.append(option);
-    }
-    slotSelect.value = context.details.horarioId;
-    document.querySelector("#name").value = context.details.nombre;
-    document.querySelector("#email").value = context.details.correo;
-    document.querySelector("#reason").value = context.details.motivo;
-    bookingForm.hidden = !context.active || context.horarios.length === 0
-        || context.stage === "indeterminado";
-}
-
-function setBusy(value) {
+function setBusy(value, assistantThinking = false) {
     busy = value;
-    document.querySelectorAll("button").forEach(button => { button.disabled = value; });
+    sendButton.disabled = value;
+    closeButton.disabled = value;
+    thinking.hidden = !(value && assistantThinking);
+    conversation.setAttribute("aria-busy", String(value));
 }
 
 async function sendChat(message) {
     if (!message || busy) return;
     appendMessage("Vos", message);
     input.value = "";
-    setBusy(true);
+    setBusy(true, true);
     try {
         const result = await call("chat", { message });
         appendMessage("Asistente", result.answer, result.retrieved, false, result.herramientas || []);
-        if (Array.isArray(result.horarios)) {
-            slotSelect.replaceChildren();
-            for (const slot of result.horarios) {
-                const option = document.createElement("option");
-                option.value = slot.id;
-                option.textContent = slot.label;
-                slotSelect.append(option);
-            }
-            bookingForm.hidden = result.horarios.length === 0
-                || currentAttempt?.stage === "indeterminado";
-        }
-        if (result.conversation) {
-            showAttempt(result.booking);
-            showConversation(result.conversation);
-        }
+        showAttempt(result.booking);
     } catch (error) {
         appendMessage("Error", error.message || "No se pudo obtener una respuesta del servidor.", null, true);
     } finally {
         setBusy(false);
+        input.focus({ preventScroll: true });
     }
 }
 
-form.addEventListener("submit", async event => {
+form.addEventListener("submit", event => {
     event.preventDefault();
-    await sendChat(input.value.trim());
+    sendChat(input.value.trim());
 });
 
-bookingForm.addEventListener("submit", async event => {
-    event.preventDefault();
+downloadButton.addEventListener("click", () => {
+    if (!currentReceipt) return;
+    const receipt = currentReceipt;
+    const text = [
+        "CONSULTORIO LOS TILOS · DEMO ACADÉMICA",
+        "Comprobante de solicitud registrada", "",
+        "Solicitud: " + receipt.solicitudId,
+        "Estado: " + receipt.estado,
+        "Horario solicitado (Buenos Aires): " + receipt.horario,
+        "Nombre: " + receipt.details.nombre,
+        "Correo: " + receipt.details.correo,
+        "Motivo general: " + receipt.details.motivo, "",
+        receipt.message, "",
+        "Comprobante: " + receipt.comprobante, "",
+        "Guardá este archivo en un lugar privado."
+    ].join("\r\n");
+    const url = URL.createObjectURL(new Blob(["\uFEFF", text], { type: "text/plain;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "comprobante-los-tilos-" + String(receipt.solicitudId).replace(/[^a-zA-Z0-9-]/g, "") + ".txt";
+    link.hidden = true;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+
+closeButton.addEventListener("click", async () => {
     if (busy) return;
-    setBusy(true);
-    try {
-        const attempt = await call("booking/prepare", {
-            horarioId: slotSelect.value,
-            nombre: document.querySelector("#name").value,
-            correo: document.querySelector("#email").value,
-            motivo: document.querySelector("#reason").value
-        });
-        showAttempt(attempt);
-    } catch (error) {
-        appendMessage("Error", error.message, null, true);
-    } finally {
-        setBusy(false);
-    }
-});
-
-confirmButton.addEventListener("click", async () => {
-    if (!currentAttempt || busy) return;
-    await sendChat(currentAttempt.stage === "indeterminado"
-        ? "Verificá o reintentá el envío anterior con la misma clave."
-        : "Confirmo que envíes la solicitud con los datos del resumen.");
-});
-
-document.querySelector("#close-session").addEventListener("click", async () => {
-    if (busy) return;
-    if (!window.confirm("¿Finalizar la sesión? Se borrarán los datos y el comprobante de esta página. Guardá el comprobante antes de continuar.")) return;
+    if (!window.confirm("¿Finalizar la sesión? Se borrarán los datos de esta página. Descargá el comprobante antes de continuar si ya registraste una solicitud.")) return;
     setBusy(true);
     try {
         await call("booking/close", {});
         showAttempt(null);
-        bookingForm.reset();
-        bookingForm.hidden = true;
-        conversation.replaceChildren();
-        appendMessage("Asistente", "Sesión finalizada. Podés iniciar una consulta nueva.");
+        showEmptyConversation();
+        input.value = "";
     } catch (error) {
-        appendMessage("Error", error.message, null, true);
+        appendMessage("Error", error.message || "No se pudo finalizar la sesión.", null, true);
     } finally {
         setBusy(false);
     }
 });
 
+showEmptyConversation();
+showAttempt(null);
 setBusy(true);
 call("booking/current").then(async attempt => {
     showAttempt(attempt);
     const context = await call("booking/conversation");
-    showConversation(context);
-    for (const turn of context?.history || []) {
-        appendMessage(turn.role === "user" ? "Vos" : "Asistente", turn.content);
-    }
+    for (const turn of context?.history || []) appendMessage(turn.role === "user" ? "Vos" : "Asistente", turn.content);
 })
     .catch(() => appendMessage("Aviso", "No pude recuperar la sesión anterior. Volvé a consultar disponibilidad."))
     .finally(() => setBusy(false));
