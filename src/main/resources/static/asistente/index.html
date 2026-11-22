@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f7e3eb">
+    <title>Consultorio Los Tilos | Asistente</title>
+    <link rel="stylesheet" href="asistente.css">
+    <script src="asistente.js" defer></script>
+</head>
+<body>
+    <main class="assistant-layout">
+        <section class="chat-panel" aria-labelledby="page-title">
+            <header class="chat-header">
+                <div class="brand">
+                    <span class="brand-mark" aria-hidden="true">
+                        <svg viewBox="0 0 48 48" fill="none"><path d="M24 12c-5-6-16-5-16 5 0 6 3 11 4 17 1 7 5 7 7 0l2-7c1-3 5-3 6 0l2 7c2 7 6 7 7 0 1-6 4-11 4-17 0-10-11-11-16-5Z" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M19 12c2 2 5 3 9 2" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+                    </span>
+                    <div>
+                        <p class="eyebrow">Demo académica</p>
+                        <h1 id="page-title">Consultorio Los Tilos</h1>
+                    </div>
+                </div>
+                <p class="intro">Consultá sobre turnos, servicios y políticas del consultorio.<br class="desktop-break"> Usá datos ficticios para probar la demo.</p>
+            </header>
+
+            <section id="conversation" aria-label="Conversación con el asistente" role="log" aria-live="polite" aria-relevant="additions"></section>
+
+            <form id="chat" class="composer">
+                <label for="message">Tu consulta</label>
+                <textarea id="message" rows="2" maxlength="1000" required placeholder="Escribí tu consulta acá…"></textarea>
+                <div class="composer-actions">
+                    <button id="send" class="button button-send" type="submit">Enviar
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 14 0m-5-5 5 5-5 5"/></svg>
+                    </button>
+                    <span class="composer-hint">Te acompañamos con tu consulta.</span>
+                </div>
+            </form>
+        </section>
+
+        <aside class="side-panel" aria-label="Comprobante y sesión">
+            <div class="thinking-space">
+                <div id="thinking" class="thinking" role="status" aria-live="polite" hidden>
+                    <div class="thinking-label"><span class="thinking-dot" aria-hidden="true"></span>El asistente está pensando…</div>
+                    <div class="progress-track" role="progressbar" aria-label="Preparando la respuesta"><span class="progress-fill"></span></div>
+                </div>
+            </div>
+
+            <section id="review" class="receipt-panel" aria-labelledby="receipt-title" aria-live="polite" hidden>
+                <div class="receipt-heading">
+                    <span class="receipt-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 12 3 3 7-7"/><circle cx="12" cy="12" r="9"/></svg></span>
+                    <p class="eyebrow">Comprobante</p>
+                </div>
+                <h2 id="receipt-title">Tu solicitud registrada</h2>
+                <span id="receipt-state" class="state-badge"></span>
+                <p id="booking-status" class="booking-status"></p>
+                <dl class="receipt-data">
+                    <div><dt>Horario solicitado · Buenos Aires</dt><dd id="receipt-slot"></dd></div>
+                    <div><dt>Nombre</dt><dd id="receipt-name"></dd></div>
+                    <div><dt>Correo electrónico</dt><dd id="receipt-email"></dd></div>
+                    <div><dt>Motivo general</dt><dd id="receipt-reason"></dd></div>
+                    <div><dt>Número de solicitud</dt><dd id="receipt-id" class="receipt-reference"></dd></div>
+                </dl>
+                <details class="receipt-code">
+                    <summary>Ver código de comprobante</summary>
+                    <code id="receipt-token"></code>
+                </details>
+                <button id="download-receipt" class="button button-download" type="button">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 16v5h14v-5"/></svg>
+                    Descargar comprobante
+                </button>
+                <p class="receipt-note">Guardalo antes de finalizar. Podés recuperar este comprobante durante la sesión, hasta 30 minutos de inactividad. Si la sesión vence o el servidor se reinicia, se pierde esa recuperación.</p>
+            </section>
+
+            <footer class="session-actions">
+                <button id="close-session" class="button button-close" type="button">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H4v16h6m4-12 4 4-4 4m-5-4h9"/></svg>
+                    Finalizar sesión
+                </button>
+            </footer>
+        </aside>
+    </main>
+
+    <template id="empty-conversation">
+        <div class="empty-conversation">
+            <span class="empty-heart" aria-hidden="true">♡</span>
+            <p>Un espacio para tu consulta</p>
+            <span>Escribí abajo para conversar con el asistente.</span>
+        </div>
+    </template>
+</body>
+</html>
