@@ -68,7 +68,7 @@ h1 { margin: 0; font-size: clamp(1.5rem, 2.2vw, 2rem); line-height: 1.2; letter-
 #conversation article.error { background: #fff0f0; color: #8e3b48; border-color: #f0cbd0; }
 #conversation article strong { font-size: .85rem; }
 #conversation article p { margin: .3rem 0 0; white-space: pre-wrap; }
-.message-sources { margin-top: .7rem; font-size: .73rem; color: #64768d; }
+.message-sources { display: none; }
 .message-sources summary { cursor: pointer; }
 .message-sources small { display: block; margin-top: .4rem; overflow-wrap: anywhere; }
 .empty-conversation { display: grid; align-content: center; justify-items: center; min-height: 100%; padding: 2rem 1rem; text-align: center; color: var(--muted); }
@@ -138,3 +138,8 @@ h2 { margin: .8rem 0 .7rem; font-size: 1.4rem; line-height: 1.2; letter-spacing:
     *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
     .progress-fill { animation: none; width: 100%; opacity: .65; }
 }
+
+.composer-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.button-retry { background: #fce5ed; color: #91455f; border-color: #eec5d3; min-height: 36px; padding: .4rem .85rem; }
+.button-retry:hover:not(:disabled) { background: #f8d6e3; }
+.button-retry[hidden] { display: none; }
