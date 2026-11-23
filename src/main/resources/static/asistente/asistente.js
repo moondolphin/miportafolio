@@ -9,6 +9,35 @@ const downloadButton = document.querySelector("#download-receipt");
 const emptyTemplate = document.querySelector("#empty-conversation");
 let currentReceipt = null;
 let busy = false;
+const retryButton = document.querySelector("#retry");
+let retryAction = null;
+let retryEntry = null;
+
+function clearRetry() {
+    retryAction = null;
+    retryEntry = null;
+    retryButton.hidden = true;
+}
+
+function offerRetry(action, entry) {
+    retryAction = action;
+    retryEntry = entry;
+    retryButton.hidden = false;
+}
+
+function reportClientError(operation) {
+    // Best effort: a disconnected browser cannot deliver a server log.
+    call("client-error", { operation }).catch(() => {});
+}
+
+retryButton.addEventListener("click", () => {
+    if (busy || !retryAction) return;
+    const action = retryAction;
+    const entry = retryEntry;
+    retryAction = null;
+    retryEntry = null;
+    action(entry);
+});
 
 function showEmptyConversation() {
     conversation.replaceChildren(emptyTemplate.content.cloneNode(true));
@@ -45,6 +74,7 @@ function appendMessage(label, text, retrieved, isError = false, tools = []) {
     }
     conversation.append(entry);
     conversation.scrollTop = conversation.scrollHeight;
+    return entry;
 }
 
 async function call(path, body) {
@@ -56,8 +86,14 @@ async function call(path, body) {
     }
     const response = await fetch("../api/v1/public/assistant/" + path, options);
     const text = await response.text();
-    const result = text ? JSON.parse(text) : null;
-    if (!response.ok) throw new Error(result?.error || "El servidor no pudo procesar la consulta.");
+    let result;
+    try { result = text ? JSON.parse(text) : null; }
+    catch (_) { throw new Error("El servidor devolvió una respuesta inválida. Podés reintentar."); }
+    if (!response.ok) {
+        const error = new Error(result?.error || "El servidor no pudo procesar la consulta.");
+        error.booking = result?.booking;
+        throw error;
+    }
     return result;
 }
 
@@ -87,21 +123,36 @@ function setBusy(value, assistantThinking = false) {
     busy = value;
     sendButton.disabled = value;
     closeButton.disabled = value;
+    retryButton.disabled = value;
+    retryButton.textContent = value && retryAction === null ? "Reintentando…" : "Reintentar ↻";
     thinking.hidden = !(value && assistantThinking);
     conversation.setAttribute("aria-busy", String(value));
 }
 
-async function sendChat(message) {
+async function sendChat(message, requestId = crypto.randomUUID(), retry = false, oldEntry = null) {
     if (!message || busy) return;
-    appendMessage("Vos", message);
-    input.value = "";
+    if (!retry) {
+        clearRetry();
+        appendMessage("Vos", message);
+        input.value = "";
+    }
     setBusy(true, true);
     try {
-        const result = await call("chat", { message });
-        appendMessage("Asistente", result.answer, result.retrieved, false, result.herramientas || []);
+        const result = await call("chat", { message, requestId, retry });
+        oldEntry?.remove();
+        clearRetry();
+        const tools = result.herramientas || [];
+        const entry = appendMessage("Asistente", result.answer, result.retrieved, false, tools);
         showAttempt(result.booking);
+        if (tools.some(tool => !tool.exito) || result.booking?.stage === "indeterminado") {
+            offerRetry(previous => sendChat(message, requestId, true, previous), entry);
+        }
     } catch (error) {
-        appendMessage("Error", error.message || "No se pudo obtener una respuesta del servidor.", null, true);
+        if (error.booking) showAttempt(error.booking);
+        oldEntry?.remove();
+        const entry = appendMessage("Error", error.message || "No se pudo obtener una respuesta del servidor.", null, true);
+        offerRetry(previous => sendChat(message, requestId, true, previous), entry);
+        reportClientError("chat");
     } finally {
         setBusy(false);
         input.focus({ preventScroll: true });
@@ -140,29 +191,45 @@ downloadButton.addEventListener("click", () => {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 
-closeButton.addEventListener("click", async () => {
+async function closeSession(oldEntry = null) {
     if (busy) return;
-    if (!window.confirm("¿Finalizar la sesión? Se borrarán los datos de esta página. Descargá el comprobante antes de continuar si ya registraste una solicitud.")) return;
     setBusy(true);
     try {
         await call("booking/close", {});
+        clearRetry();
         showAttempt(null);
         showEmptyConversation();
         input.value = "";
     } catch (error) {
-        appendMessage("Error", error.message || "No se pudo finalizar la sesión.", null, true);
-    } finally {
-        setBusy(false);
-    }
+        oldEntry?.remove();
+        const entry = appendMessage("Error", error.message || "No se pudo finalizar la sesión.", null, true);
+        offerRetry(closeSession, entry);
+        reportClientError("close");
+    } finally { setBusy(false); }
+}
+closeButton.addEventListener("click", () => {
+    if (busy) return;
+    if (window.confirm("¿Finalizar la sesión? Se borrarán los datos de esta página. Descargá el comprobante antes de continuar si ya registraste una solicitud.")) closeSession();
 });
 
+async function restoreSession(oldEntry = null) {
+    if (busy) return;
+    setBusy(true);
+    try {
+        const attempt = await call("booking/current");
+        const context = await call("booking/conversation");
+        oldEntry?.remove();
+        clearRetry();
+        showAttempt(attempt);
+        showEmptyConversation();
+        for (const turn of context?.history || []) appendMessage(turn.role === "user" ? "Vos" : "Asistente", turn.content);
+    } catch (error) {
+        oldEntry?.remove();
+        const entry = appendMessage("Error", "No pude recuperar la sesión anterior. Podés reintentar.", null, true);
+        offerRetry(restoreSession, entry);
+        reportClientError("restore");
+    } finally { setBusy(false); }
+}
 showEmptyConversation();
 showAttempt(null);
-setBusy(true);
-call("booking/current").then(async attempt => {
-    showAttempt(attempt);
-    const context = await call("booking/conversation");
-    for (const turn of context?.history || []) appendMessage(turn.role === "user" ? "Vos" : "Asistente", turn.content);
-})
-    .catch(() => appendMessage("Aviso", "No pude recuperar la sesión anterior. Volvé a consultar disponibilidad."))
-    .finally(() => setBusy(false));
+restoreSession();

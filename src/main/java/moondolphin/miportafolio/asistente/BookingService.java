@@ -72,6 +72,13 @@ class BookingService {
                 throw new ResponseStatusException(CONFLICT, "El horario preparado ya no cumple las políticas institucionales.");
             }
             registration.requireConfiguration();
+            if ("indeterminado".equals(attempt.stage)) {
+                var lookup = inspect(session, null);
+                if ("encontrada".equals(lookup.resultado())) return attempt.view();
+                if (!"no_encontrada".equals(lookup.resultado())) {
+                    throw new ResponseStatusException(CONFLICT, "No se pudo resolver el intento anterior. No se reenvió.");
+                }
+            }
             // Mark the result as uncertain before sending. A retry reuses this exact payload.
             attempt.stage = "indeterminado";
             var result = registration.register(attempt.payload());

@@ -59,6 +59,10 @@ class BookingConversation {
         }
     }
 
+    BookingService.View currentAttempt(HttpSession session) {
+        return booking.current(session);
+    }
+
     Context current(HttpSession session) {
         if (session == null) return null;
         synchronized (session) {
@@ -68,40 +72,76 @@ class BookingConversation {
     }
 
     InstitutionalAssistant.ChatReply reply(HttpSession session, String message) {
+        return reply(session, message, UUID.randomUUID().toString(), false);
+    }
+
+    InstitutionalAssistant.ChatReply reply(HttpSession session, String message, String requestId, boolean retry) {
         synchronized (session) {
             State state = state(session);
-            var turn = new TurnWork(message, booking.current(session), state.reviewedAttempt);
-            LOG.info("asistente id={} evento=inicio", turn.trace);
-            JsonNode plan = openAi.planDialogue(institutional.prompt(), input(session, state, turn, null));
-            turn.plan = plan;
-            turn.confirmed = plan.path("confirmacion_explicita").asBoolean(false);
-            var updated = update(state.details, plan, turn.validation);
-            if (!updated.equals(state.details) || !turn.validation.isEmpty()) {
-                invalidateReview(session, state);
-                state.details = updated;
+            if (retry && state.turn != null && !requestId.equals(state.requestId)) {
+                throw new ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT,
+                        "El intento ya no pertenece al turno actual. Conservá tus datos y retomá la conversación.");
             }
-            if (!state.active && plan.path("intencion_turno").asBoolean(false)
-                    && turn.previous != null && "registrada".equals(turn.previous.stage())) {
-                booking.clearCompleted(session);
-                invalidateReview(session, state);
-                state.details = new BookingService.Details("", state.details.nombre(),
-                        state.details.correo(), state.details.motivo());
+            boolean resuming = requestId.equals(state.requestId);
+            if (resuming && !message.equals(state.turn.message)) {
+                throw new ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT, "El reintento debe conservar el mensaje original.");
             }
-            if (plan.path("intencion_turno").isBoolean()) state.active = plan.path("intencion_turno").asBoolean();
-            if (plan.path("cancelar_preparacion").asBoolean()) {
-                invalidateReview(session, state);
-                state.active = false;
-                state.details = new BookingService.Details("", state.details.nombre(), state.details.correo(), state.details.motivo());
-                turn.notes.put("preparacion_cancelada", true);
+            if (!resuming) {
+                state.requestId = requestId;
+                state.turn = new TurnWork(message, booking.current(session), state.reviewedAttempt);
             }
-            runActions(session, state, turn, plan.path("herramientas"));
-            resolveSelection(session, state, turn);
+            var turn = state.turn;
+            if (turn.completed != null) return turn.completed;
+            LOG.info("asistente id={} evento={} ", turn.trace, resuming ? "reintento" : "inicio");
+            if (resuming) {
+                if (turn.retrieved == null) turn.groundingRepairAttempted = false;
+                if (turn.historyWritten) {
+                    state.history.subList(state.history.size() - 2, state.history.size()).clear();
+                    turn.historyWritten = false;
+                }
+                recoverFailures(session, state, turn);
+            }
+            if (!turn.initialized) {
+                JsonNode plan = openAi.planDialogue(institutional.prompt(), input(session, state, turn, null));
+                turn.plan = plan;
+                turn.confirmed = plan.path("confirmacion_explicita").asBoolean(false);
+                var updated = update(state.details, plan, turn.validation);
+                if (!updated.equals(state.details) || !turn.validation.isEmpty()) {
+                    invalidateReview(session, state);
+                    state.details = updated;
+                    if (state.authorizedIncomplete != null && !preservesKnownData(state.authorizedIncomplete, updated)) {
+                        state.authorizedIncomplete = null;
+                    }
+                }
+                if (!state.active && plan.path("intencion_turno").asBoolean(false)
+                        && turn.previous != null && "registrada".equals(turn.previous.stage())) {
+                    booking.clearCompleted(session);
+                    state.authorizedIncomplete = null;
+                    invalidateReview(session, state);
+                    state.details = new BookingService.Details("", state.details.nombre(),
+                            state.details.correo(), state.details.motivo());
+                }
+                if (plan.path("intencion_turno").isBoolean()) state.active = plan.path("intencion_turno").asBoolean();
+                if (plan.path("cancelar_preparacion").asBoolean()) {
+                    invalidateReview(session, state);
+                    state.active = false;
+                    state.details = new BookingService.Details("", state.details.nombre(), state.details.correo(), state.details.motivo());
+                    state.authorizedIncomplete = null;
+                    turn.notes.put("preparacion_cancelada", true);
+                }
+                turn.initialized = true;
+                if (state.authorizedIncomplete != null) prepareReview(session, state, turn);
+                runActions(session, state, turn, plan.path("herramientas"));
+                recoverUncertainRegistration(session, state, turn);
+                resolveSelection(session, state, turn);
+            }
 
-            InstitutionalAssistant.Retrieval retrieved = null;
-            String query = plan.path("consulta_institucional").asText("").strip();
-            if (!query.isEmpty() && institutionalQuery(query, state.details)) {
+            InstitutionalAssistant.Retrieval retrieved = turn.retrieved;
+            String query = turn.plan.path("consulta_institucional").asText("").strip();
+            if (retrieved == null && !query.isEmpty() && institutionalQuery(query, state.details)) {
                 retrieved = institutional.retrieve(query);
                 turn.institutionalResults.put(queryKey(query), retrieved);
+                turn.retrieved = retrieved;
             }
 
             for (int round = 0; round < 4; round++) {
@@ -122,6 +162,7 @@ class BookingConversation {
                         var additional = institutional.retrieve(institutionalNeed);
                         turn.institutionalResults.put(key, additional);
                         retrieved = mergeRetrieval(retrieved, additional);
+                        turn.retrieved = retrieved;
                         contextChanged = true;
                     } else {
                         LOG.info("asistente id={} ronda={} decision=RAG_CONSULTA_RECHAZADA", turn.trace, turn.diagnosticRound);
@@ -138,6 +179,7 @@ class BookingConversation {
                 if (!requested.isEmpty()) {
                     turn.routes.add("TOOLS_REQUESTED");
                     contextChanged |= runActions(session, state, turn, requested);
+                    recoverUncertainRegistration(session, state, turn);
                     resolveSelection(session, state, turn);
                 }
                 // A provisional draft may request both kinds of context. Fulfil requests before
@@ -159,6 +201,7 @@ class BookingConversation {
                                     "No pude recuperar una fuente institucional segura para esta respuesta. Volvé a intentar.");
                         }
                         retrieved = institutional.retrieve(clean);
+                        turn.retrieved = retrieved;
                         turn.institutionalResults.put(queryKey(clean), retrieved);
                         turn.notes.put("respaldo_institucional_recuperado", true);
                     } else {
@@ -174,16 +217,98 @@ class BookingConversation {
                 }
                 String answer = draft.path("respuesta").asText("");
                 if (answer.isBlank()) throw OpenAiClient.unavailable();
+                var actual = booking.current(session);
+                boolean registrationRequested = turn.effectExecuted || turn.confirmed
+                        || turn.notes.containsKey("operacion_no_habilitada");
+                if (registrationRequested && !hasReceipt(actual)) {
+                    LOG.warn("asistente id={} evento=registro_sin_comprobante estado={}",
+                            turn.trace, actual == null ? "sin_intento" : actual.stage());
+                    answer = registrationPendingMessage(actual, state, turn);
+                }
                 rememberTurn(state, "user", message);
                 rememberTurn(state, "assistant", answer);
+                turn.historyWritten = true;
                 if (pending != null && "resumen".equals(pending.stage())) state.reviewedAttempt = pending.attemptId();
                 logRound(turn, state, draft, retrieved, "RESPUESTA_ENTREGADA");
-                return new InstitutionalAssistant.ChatReply(answer, usedInstitutionalSource(draft, retrieved),
-                        state.slots, pending, state.context(), turn.calls.stream().map(Call::evidence).toList());
+                var response = new InstitutionalAssistant.ChatReply(answer, usedInstitutionalSource(draft, retrieved),
+                        state.slots, booking.current(session), state.context(), turn.calls.stream().map(Call::evidence).toList());
+                if (turn.calls.stream().allMatch(Call::exito)) turn.completed = response;
+                return response;
             }
             LOG.warn("asistente id={} evento=limite_rondas rondas={} rutas={} herramientas_ejecutadas={}",
                     turn.trace, turn.diagnosticRound, turn.routes, turn.calls.size());
             throw new ToolCycleException(turn.routes);
+        }
+    }
+
+    private static String registrationPendingMessage(BookingService.View attempt, State state, TurnWork turn) {
+        if (attempt != null && "resumen".equals(attempt.stage())) {
+            var details = attempt.details();
+            return "Solicitud preparada: " + details.nombre() + ", " + details.correo()
+                    + ". Motivo informado: " + details.motivo() + ". Horario: " + attempt.horario()
+                    + ". " + attempt.message() + " ¿Confirmás que envíe la solicitud?";
+        }
+        if (attempt != null && !"registrada".equals(attempt.stage())) return attempt.message();
+        var missing = new ArrayList<String>(turn.validation);
+        if (!turn.selectionIssue.isBlank()) missing.add(turn.selectionIssue);
+        if (state.details.nombre().isBlank()) missing.add("Falta tu nombre.");
+        if (state.details.correo().isBlank()) missing.add("Falta un correo electrónico válido.");
+        if (state.details.motivo().isBlank()) missing.add("Falta el motivo informado de la consulta.");
+        if (state.details.horarioId().isBlank()) missing.add("Falta elegir un horario válido de los ofrecidos.");
+        return "No se registró la solicitud. " + (missing.isEmpty()
+                ? "Todavía no hay un resumen vigente con comprobante de envío. Necesito verificar la preparación."
+                : String.join(" ", missing));
+    }
+
+    // Filling missing fields preserves consent; changing an already supplied field does not.
+    private static boolean preservesKnownData(BookingService.Details known, BookingService.Details updated) {
+        return (known.nombre().isBlank() || known.nombre().equals(updated.nombre()))
+                && (known.correo().isBlank() || known.correo().equals(updated.correo()))
+                && (known.motivo().isBlank() || known.motivo().equals(updated.motivo()))
+                && (known.horarioId().isBlank() || known.horarioId().equals(updated.horarioId()));
+    }
+
+    private static boolean hasReceipt(BookingService.View attempt) {
+        return attempt != null && "registrada".equals(attempt.stage())
+                && attempt.solicitudId() != null && !attempt.solicitudId().isBlank()
+                && attempt.comprobante() != null && !attempt.comprobante().isBlank();
+    }
+
+    private void recoverUncertainRegistration(HttpSession session, State state, TurnWork turn) {
+        var attempt = booking.current(session);
+        if (!turn.effectExecuted || turn.registrationRecoveryAttempted || attempt == null
+                || !"indeterminado".equals(attempt.stage())) return;
+        turn.registrationRecoveryAttempted = true;
+        LOG.info("asistente id={} evento=verificar_registro_antes_de_reenviar", turn.trace);
+        // Only an already authorized send reaches this path. BookingService verifies
+        // existence and reuses the original payload/idempotency key before any resend.
+        recoverFailures(session, state, turn);
+    }
+
+    // Recovery executes only operations that actually failed in this authorized turn.
+    // Successful effects remain recorded even if subsequent OpenAI generation fails.
+    private void recoverFailures(HttpSession session, State state, TurnWork turn) {
+        for (Call failed : List.copyOf(turn.calls)) {
+            if (failed.exito()) continue;
+            if (AssistantTool.named(failed.herramienta()).hasEffect()) {
+                var attempt = booking.current(session);
+                if (attempt == null) throw new ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT,
+                        "Se perdió el intento de registro. No se reenvió.");
+                var saved = booking.confirm(session, attempt.attemptId());
+                if (!"registrada".equals(saved.stage())) {
+                    throw new ResponseStatusException(org.springframework.http.HttpStatus.BAD_GATEWAY, saved.message());
+                }
+                turn.calls.set(turn.calls.indexOf(failed), new Call(UUID.randomUUID().toString(),
+                        failed.herramienta(), now(), true, publicAttempt(saved)));
+            } else {
+                var key = turn.readResults.entrySet().stream().filter(e -> e.getValue().id().equals(failed.id()))
+                        .map(Map.Entry::getKey).findFirst().orElseThrow();
+                turn.calls.remove(failed);
+                turn.readResults.remove(key);
+                var actions = json.createArrayNode();
+                actions.addObject().put("nombre", key.tool()).put("solicitud_id", key.target());
+                runActions(session, state, turn, actions);
+            }
         }
     }
 
@@ -221,6 +346,10 @@ class BookingConversation {
                 // Eligibility is checked before creating evidence or invoking the tool.
                 String denial = effectDenial(session, state, turn, tool, target);
                 if (!denial.isEmpty()) {
+                    if ("registrar".equals(tool) && turn.confirmed && !complete(state.details)) {
+                        state.authorizedIncomplete = state.details;
+                        state.active = true;
+                    }
                     LOG.info("asistente id={} ronda={} herramienta={} decision=EFECTO_NO_HABILITADO",
                             turn.trace, turn.diagnosticRound, definition.name());
                     turn.notes.put("operacion_no_habilitada", Map.of("herramienta", tool, "motivo", denial,
@@ -258,14 +387,22 @@ class BookingConversation {
                         var saved = booking.confirm(session, pending.attemptId());
                         result = publicAttempt(saved);
                         success = "registrada".equals(saved.stage());
+                        if (success) state.authorizedIncomplete = null;
                     }
                     default -> throw new ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST,
                             "La herramienta solicitada no está disponible.");
                 }
             } catch (ResponseStatusException exception) {
                 success = false;
-                result = Map.of("error", exception.getReason(), "codigo", exception.getStatusCode().value());
+                result = Map.of("error", exception.getReason() == null ? "La operación no pudo completarse." : exception.getReason(),
+                        "codigo", exception.getStatusCode().value());
+            } catch (RuntimeException exception) {
+                success = false;
+                LOG.error("asistente id={} herramienta={} evento=error_inesperado tipo={}",
+                        turn.trace, tool, exception.getClass().getSimpleName());
+                result = Map.of("error", "No pude completar la operación. Podés reintentar.", "codigo", 500);
             }
+            if (!success) LOG.warn("asistente id={} herramienta={} evento=error_recuperable", turn.trace, tool);
             var call = new Call(id, tool, now(), success, result);
             turn.calls.add(call);
             LOG.info("asistente id={} ronda={} herramienta={} decision=EJECUTADA resultado_id={} exito={}",
@@ -338,12 +475,14 @@ class BookingConversation {
         boolean eligible = "resumen".equals(pending.stage()) && complete(state.details)
                 && state.slots.stream().anyMatch(slot -> slot.id().equals(state.details.horarioId())
                         && InstitutionalCalendar.current().permits(slot))
-                && turn.confirmed && turn.previous != null
-                && "resumen".equals(turn.previous.stage())
-                && turn.previous.attemptId().equals(turn.reviewedAtStart)
-                && turn.previous.attemptId().equals(state.reviewedAttempt)
-                && turn.previous.details().equals(state.details)
-                && pending.attemptId().equals(turn.previous.attemptId())
+                && ((state.authorizedIncomplete != null
+                        && preservesKnownData(state.authorizedIncomplete, state.details))
+                    || (turn.confirmed && turn.previous != null
+                        && "resumen".equals(turn.previous.stage())
+                        && turn.previous.attemptId().equals(turn.reviewedAtStart)
+                        && turn.previous.attemptId().equals(state.reviewedAttempt)
+                        && turn.previous.details().equals(state.details)
+                        && pending.attemptId().equals(turn.previous.attemptId())))
                 && turn.validation.isEmpty() && turn.selectionIssue.isEmpty();
         return eligible ? "" : "Faltan datos, selección institucional válida, resumen previo o conformidad explícita vigente. No se ejecutó el registro.";
     }
@@ -357,6 +496,9 @@ class BookingConversation {
             invalidateReview(session, state);
             state.details = new BookingService.Details(selection.id(), state.details.nombre(),
                     state.details.correo(), state.details.motivo());
+            if (state.authorizedIncomplete != null && !preservesKnownData(state.authorizedIncomplete, state.details)) {
+                state.authorizedIncomplete = null;
+            }
         }
         turn.selectionIssue = selection.issue();
     }
@@ -393,6 +535,7 @@ class BookingConversation {
                 "solicitudes_conocidas", booking.knownRequests(session)));
         input.put("historial", state.history);
         input.put("mensaje_actual", turn.message);
+        input.put("autorizacion_registro_conservada", state.authorizedIncomplete != null);
         var attempt = booking.current(session);
         input.put("operacion_antecedente", publicAttempt(attempt));
         input.put("confirmacion_pendiente", attempt != null && "resumen".equals(attempt.stage())
@@ -449,7 +592,7 @@ class BookingConversation {
         return Map.of("resultado", view.stage(), "datos_del_intento", view.details(),
                 "horario", view.horario(), "estado", view.estado() == null ? "" : view.estado(),
                 "solicitud_id", view.solicitudId() == null ? "" : view.solicitudId(),
-                "mensaje_resultado", view.message());
+                "mensaje_resultado", view.message(), "comprobante_disponible", hasReceipt(view));
     }
 
     private static BookingService.Details update(BookingService.Details previous, JsonNode plan,
@@ -465,9 +608,8 @@ class BookingConversation {
             validation.add("El correo aportado es inválido.");
             email = previous.correo();
         }
-        if (reason.length() > 500 || reason.toLowerCase(java.util.Locale.ROOT)
-                .matches(".*\\b(caries?|infecci[oó]n|absceso|gingivitis|periodontitis|pulpitis)\\b.*")) {
-            validation.add("El motivo debe ser una molestia general expresada o un servicio solicitado, sin afirmar un diagnóstico.");
+        if (reason.length() > 500) {
+            validation.add("El motivo admite hasta 500 caracteres.");
             reason = previous.motivo();
         }
         String slot = previous.horarioId();
@@ -526,11 +668,16 @@ class BookingConversation {
     private static class TurnWork {
         private final String trace = UUID.randomUUID().toString();
         private int diagnosticRound;
+        private boolean initialized;
+        private boolean historyWritten;
+        private InstitutionalAssistant.Retrieval retrieved;
+        private InstitutionalAssistant.ChatReply completed;
         private final String message;
         private final BookingService.View previous;
         private final String reviewedAtStart;
         private boolean confirmed;
         private boolean effectExecuted;
+        private boolean registrationRecoveryAttempted;
         private boolean selectionRequested;
         private boolean groundingRepairAttempted;
         private int externalRevision;
@@ -551,10 +698,13 @@ class BookingConversation {
     }
 
     private static class State {
+        private String requestId;
+        private TurnWork turn;
         private boolean active;
         private String operation = "conversando";
         private String reviewedAttempt;
         private String slotsObservedAt = "";
+        private BookingService.Details authorizedIncomplete;
         private BookingService.Details details = new BookingService.Details("", "", "", "");
         private List<AvailabilityClient.Slot> slots = List.of();
         private final List<Turn> history = new ArrayList<>();

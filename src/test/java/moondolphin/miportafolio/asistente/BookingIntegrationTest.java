@@ -81,6 +81,7 @@ class BookingIntegrationTest {
         when(registration.register(anyMap())).thenReturn(RegistrationClient.Result.unknown(),
                 new RegistrationClient.Result("ya_registrada", ROW, "pendiente"));
 
+        when(registration.inspect(anyMap())).thenReturn(new RegistrationClient.LookupResult("no_encontrada", null));
         assertThat(confirm(attempt).path("stage").asText()).isEqualTo("indeterminado");
         mvc.perform(post(BASE + "booking/prepare").session(session).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"horarioId\":\"2\",\"nombre\":\"Otra\",\"correo\":\"otra@example.com\",\"motivo\":\"Otro\"}"))

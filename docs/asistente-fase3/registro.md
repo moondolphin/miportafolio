@@ -8,7 +8,7 @@ LLM interpreta → HttpSession aporta memoria → Spring valida habilitación �
 
 RAG solo contiene información institucional; no es memoria ni agenda. El corpus actual v1.1 tiene siete secciones y cantidad variable; reprogramación es INST-06. Consultas institucionales limpias usan embeddings OpenAI e índice en memoria. El chat no envía datos personales a embeddings. El LLM recibe memoria/historial necesarios, pero nunca comprobantes, hashes ni claves de autenticación.
 
-Las afirmaciones sobre políticas, servicios o canales requieren recuperación institucional actual. Si el LLM detecta esa necesidad al redactar, solicita consulta_institucional y recibe el fragmento antes de responder. Una política no se inventa ni se transforma en permiso para realizar un trámite no implementado. La recuperación semántica aporta hasta tres fragmentos pertinentes, conservando IDs/versiones. El LLM identifica en fuentes_institucionales los fragmentos usados; Spring comprueba que hayan sido recuperados y muestra la fuente efectivamente citada, no solo el primer vecino vectorial. Las políticas afirmadas requieren fuentes institucionales válidas. Esto no cambia el corpus ni convierte RAG en memoria.
+Las afirmaciones sobre políticas, servicios o canales requieren recuperación institucional actual. Si el LLM detecta esa necesidad al redactar, solicita consulta_institucional y recibe el fragmento antes de responder. Una política no se inventa ni se transforma en permiso para realizar un trámite no implementado. La recuperación semántica aporta hasta tres fragmentos pertinentes, conservando IDs/versiones. El LLM identifica en fuentes_institucionales los fragmentos usados; Spring comprueba que hayan sido recuperados y conserva la fuente citada en la respuesta técnica; la interfaz no muestra fuentes ni consultas. Las políticas afirmadas requieren fuentes institucionales válidas. Esto no cambia el corpus ni convierte RAG en memoria.
 
 | Información | Responsable | Validación |
 | --- | --- | --- |
@@ -27,7 +27,7 @@ INST-01 vigente: lunes a viernes 09:00–18:00, America/Argentina/Buenos_Aires; 
 | disponibilidad | Lectura | Pedido del usuario/necesidad actual interpretada por LLM; sin confirmación de registro previa. |
 | consultar_solicitud | Lectura | Intento originado por esta sesión y credenciales internas asociadas. Repetible para estado y datos realmente guardados. |
 | registrar | Efecto | Datos válidos completos + cupo institucional válido elegido + resumen presentado antes de este turno + conformidad explícita sobre ese mismo resumen sin cambios. |
-| reintentar | Efecto | Petición explícita de repetir un envío indeterminado; conserva datos, UUID, comprobante/hash originales. |
+| reintentar | Efecto | Petición explícita; primero verificar el intento indeterminado. Solo reenviar si no_encontrada, con datos, UUID y comprobante/hash originales. |
 
 Lecturas pueden repetirse en cualquier turno o dentro de él cuando haga falta. Resultados anteriores no sustituyen una consulta actual. Registrar no se usa para comprobar estado o correo. Seleccionar un cupo, querer reservar o aceptar un motivo no autoriza el envío.
 
@@ -128,7 +128,7 @@ Evidencia: fecha local, rama/commit, versión V4/adenda/corpus, caso, modo autom
 
 ## 6. Sesión, duplicados y pendientes
 
-Datos corregidos invalidan la conformidad. Un intento indeterminado no se reemplaza; se conserva aunque el borrador cambie. Una repetición HTTP de confirmación ya resuelta devuelve el resultado local del envío sin escribir otra vez; NO acredita estado externo actual, para eso se llama consultar_solicitud. Un reintento explícito indeterminado reutiliza el payload original. La concurrencia de la misma sesión se serializa; idempotencia SQL protege una sola fila incluso si el cliente repite tras perder la respuesta.
+Datos corregidos invalidan la conformidad. Un intento indeterminado no se reemplaza; se conserva aunque el borrador cambie. Una repetición HTTP de confirmación ya resuelta devuelve el resultado local del envío sin escribir otra vez; NO acredita estado externo actual, para eso se llama consultar_solicitud. Un reintento explícito indeterminado consulta primero n8n: encontrada recupera el comprobante; no_encontrada permite reenviar el payload original; una consulta fallida impide reenviar. La concurrencia de la misma sesión se serializa; idempotencia SQL protege una sola fila incluso si el cliente repite tras perder la respuesta.
 
 HttpSession expira a 30 minutos de inactividad; historial de 40 mensajes y memoria estructurada. Misma cookie permite recargar. Reinicio, expiración o pérdida de cookie elimina el comprobante original, que no puede reconstruirse desde su hash. No hay recuperación entre sesiones. Guardarlo en privado al recibirlo; no publicarlo en capturas. Operación de demo con una instancia; múltiples instancias requieren sesión compartida.
 
@@ -147,3 +147,8 @@ El GET de disponibilidad actual devuelve el catálogo completo de cupos, sin par
 Las consultas RAG idénticas dentro del mensaje reutilizan su contexto; nuevas consultas acumulan fuentes para que el LLM pueda fundamentar distintos temas. No se reemplaza el contexto anterior por un único fragmento genérico. El LLM debe elegir fuentes pertinentes a sus afirmaciones; un fragmento de horarios no respalda una recomendación clínica. Sin protocolo profesional aprobado, no recomendar guardias ni clasificar urgencia mediante intensidad del dolor o fiebre; mantener el límite administrativo y el contacto institucional.
 
 Se conserva el límite técnico de cuatro rondas. No se añade finishOnly ni se aumenta a ocho. Una petición repetida no se considera información nueva ni obliga a otra ronda por sí sola. Los efectos conservan datos válidos, horario seleccionado, resumen previo, conformidad explícita e idempotencia; como máximo uno por mensaje. Las pruebas manuales quedan a cargo del usuario: este cambio no acredita una prueba integrada ejecutada.
+
+
+## Recuperación de errores en Fase 4
+
+La política vigente se documenta en [resiliencia.md](../asistente-fase4/resiliencia.md). El reintento de un registro indeterminado ahora verifica obligatoriamente en n8n antes de reenviar; las instrucciones de reintento anteriores se mantienen alineadas con esta verificación. No modifica SQL ni el workflow publicado.

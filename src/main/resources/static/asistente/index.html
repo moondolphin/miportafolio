@@ -27,7 +27,10 @@
             <section id="conversation" aria-label="Conversación con el asistente" role="log" aria-live="polite" aria-relevant="additions"></section>
 
             <form id="chat" class="composer">
-                <label for="message">Tu consulta</label>
+                <div class="composer-heading">
+                    <label for="message">Tu consulta</label>
+                    <button id="retry" class="button button-retry" type="button" hidden>Reintentar ↻</button>
+                </div>
                 <textarea id="message" rows="2" maxlength="1000" required placeholder="Escribí tu consulta acá…"></textarea>
                 <div class="composer-actions">
                     <button id="send" class="button button-send" type="submit">Enviar

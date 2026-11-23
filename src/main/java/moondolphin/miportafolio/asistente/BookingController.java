@@ -61,8 +61,19 @@ class BookingController {
 
     @ExceptionHandler(ResponseStatusException.class)
     ResponseEntity<Map<String, String>> error(ResponseStatusException exception) {
+        org.slf4j.LoggerFactory.getLogger(BookingController.class).warn(
+                "asistente evento=error_sesion http={} tipo={}", exception.getStatusCode().value(), exception.getClass().getSimpleName());
         return ResponseEntity.status(exception.getStatusCode()).cacheControl(CacheControl.noStore())
                 .body(Map.of("error", exception.getReason()));
+    }
+
+    @ExceptionHandler(Exception.class)
+    ResponseEntity<Map<String, String>> unexpected(Exception exception) {
+        String id = java.util.UUID.randomUUID().toString();
+        org.slf4j.LoggerFactory.getLogger(BookingController.class).error(
+                "asistente error_id={} evento=error_sesion tipo={}", id, exception.getClass().getSimpleName());
+        return ResponseEntity.internalServerError().cacheControl(CacheControl.noStore())
+                .body(Map.of("error", "No pude completar la operación. Podés reintentar.", "errorId", id));
     }
 
     private static ResponseEntity<BookingService.View> response(BookingService.View view) {
